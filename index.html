@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4-7-8 Breathing Widget with Timer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+            transition: background-color 2s ease;
+        }
+
+        .widget-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 450px;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+        }
+
+        .status-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 15px;
+            color: #555;
+            min-height: 2rem;
+        }
+        
+        .timer-text {
+            font-size: 1rem;
+            color: #888;
+            margin-bottom: 20px;
+            min-height: 1.2rem;
+        }
+
+        /* --- New Controls Styling --- */
+        .controls {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+            background-color: #fafafa;
+        }
+        
+        button {
+            padding: 10px 30px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+        
+        button.stop {
+            background-color: #e74c3c;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .session-info {
+            font-size: 0.9rem;
+            color: #666;
+            background: #f8f9fa;
+            padding: 5px 15px;
+            border-radius: 15px;
+            display: none; /* Hidden by default */
+        }
+
+        .legend {
+            font-size: 0.85rem;
+            color: #999;
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .dot {
+            height: 10px;
+            width: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="widget-container">
+    <div class="session-info" id="overallTimer">Time Remaining: 00:00</div>
+    
+    <canvas id="breathCanvas" width="400" height="400"></canvas>
+    
+    <div class="status-text" id="statusText">Ready to Breathe?</div>
+    <div class="timer-text" id="phaseTimerText"></div>
+    
+    <div class="controls">
+        <div class="input-group" id="startControls">
+            <select id="minuteSelect">
+                <option value="1">1 Minute</option>
+                <option value="2">2 Minutes</option>
+                <option value="3">3 Minutes</option>
+                <option value="4">4 Minutes</option>
+                <option value="5">5 Minutes</option>
+            </select>
+            <button onclick="startSession()" id="actionBtn">Start Session</button>
+        </div>
+        
+        <button onclick="stopSession()" id="stopBtn" class="stop" style="display:none;">End Session</button>
+
+        <div class="legend">
+            <span><span class="dot" style="background:#77dd77;"></span>Inhale</span>
+            <span><span class="dot" style="background:#89CFF0;"></span>Hold</span>
+            <span><span class="dot" style="background:#b39eb5;"></span>Exhale</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('breathCanvas');
+    const ctx = canvas.getContext('2d');
+    const statusDiv = document.getElementById('statusText');
+    const phaseTimerDiv = document.getElementById('phaseTimerText');
+    const overallTimerDiv = document.getElementById('overallTimer');
+    const startControls = document.getElementById('startControls');
+    const stopBtn = document.getElementById('stopBtn');
+
+    // --- Configuration ---
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const minSize = 100;
+    const maxSize = 250;
+    
+    const phases = {
+        inhale: 4,
+        hold: 7,
+        exhale: 8
+    };
+
+    const colors = {
+        inhale: '#77dd77', 
+        hold:   '#89CFF0', 
+        exhale: '#b39eb5',
+        neutral: '#e0e0e0'
+    };
+
+    // State Variables
+    let isRunning = false;
+    let startTime = null;
+    let sessionEndTime = null;
+    let animationFrameId = null;
+
+    // --- Draw "Idle" State on Load ---
+    function drawIdle() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = colors.neutral;
+        const x = centerX - (minSize / 2);
+        const y = centerY - (minSize / 2);
+        
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, minSize, minSize, 30);
+        else ctx.rect(x, y, minSize, minSize);
+        ctx.fill();
+    }
+
+    // --- Session Logic ---
+
+    function startSession() {
+        const minutes = parseInt(document.getElementById('minuteSelect').value);
+        const durationMs = minutes * 60 * 1000;
+        
+        isRunning = true;
+        startTime = performance.now();
+        sessionEndTime = startTime + durationMs;
+        
+        // Update UI
+        startControls.style.display = 'none';
+        stopBtn.style.display = 'block';
+        overallTimerDiv.style.display = 'inline-block';
+        
+        // Start Loop
+        requestAnimationFrame(loop);
+    }
+
+    function stopSession(finishedNaturally = false) {
+        isRunning = false;
+        cancelAnimationFrame(animationFrameId);
+        
+        // Reset UI
+        startControls.style.display = 'flex';
+        stopBtn.style.display = 'none';
+        overallTimerDiv.style.display = 'none';
+        
+        statusDiv.innerText = finishedNaturally ? "Session Complete" : "Session Stopped";
+        statusDiv.style.color = "#333";
+        phaseTimerDiv.innerText = finishedNaturally ? "Great job!" : "";
+        
+        drawIdle();
+    }
+
+    function loop(currentTime) {
+        if (!isRunning) return;
+
+        // 1. Check Session Timer
+        if (currentTime >= sessionEndTime) {
+            stopSession(true);
+            return;
+        }
+
+        // Calculate Overall Time Remaining
+        const msRemaining = sessionEndTime - currentTime;
+        const totalSecondsRemaining = Math.ceil(msRemaining / 1000);
+        const mins = Math.floor(totalSecondsRemaining / 60);
+        const secs = totalSecondsRemaining % 60;
+        overallTimerDiv.innerText = `Time Remaining: ${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+        // 2. Calculate Breath Cycle Phase
+        const totalCycleDuration = (phases.inhale + phases.hold + phases.exhale) * 1000;
+        const elapsedTime = (currentTime - startTime) % totalCycleDuration;
+        
+        let size = minSize;
+        let text = "";
+        let color = colors.inhale;
+        let subText = "";
+
+        // --- PHASE CALCULATION ---
+        
+        // INHALE
+        if (elapsedTime < phases.inhale * 1000) {
+            const phaseProgress = elapsedTime / (phases.inhale * 1000);
+            size = minSize + (maxSize - minSize) * Math.sin(phaseProgress * (Math.PI/2));
+            text = "Breathe In...";
+            color = colors.inhale;
+            subText = Math.ceil(phases.inhale - (elapsedTime/1000));
+        
+        // HOLD
+        } else if (elapsedTime < (phases.inhale + phases.hold) * 1000) {
+            const holdStart = phases.inhale * 1000;
+            const timeInHold = elapsedTime - holdStart;
+            size = maxSize + (Math.sin(timeInHold * 0.005) * 5); 
+            text = "Hold...";
+            color = colors.hold;
+            subText = Math.ceil(phases.hold - (timeInHold/1000));
+
+        // EXHALE
+        } else {
+            const exhaleStart = (phases.inhale + phases.hold) * 1000;
+            const timeInExhale = elapsedTime - exhaleStart;
+            const phaseProgress = timeInExhale / (phases.exhale * 1000);
+            size = maxSize - (maxSize - minSize) * phaseProgress;
+            text = "Exhale slowly...";
+            color = colors.exhale;
+            subText = Math.ceil(phases.exhale - (timeInExhale/1000));
+        }
+
+        // --- DRAWING ---
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = color;
+        const x = centerX - (size / 2);
+        const y = centerY - (size / 2);
+        
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, size, size, 40);
+        else ctx.rect(x, y, size, size);
+        ctx.fill();
+
+        statusDiv.innerText = text;
+        statusDiv.style.color = color;
+        phaseTimerDiv.innerText = subText + "s";
+
+        animationFrameId = requestAnimationFrame(loop);
+    }
+
+    // Initial Draw
+    drawIdle();
+
+</script>
+
+</body>
+</html>
