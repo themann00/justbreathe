@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Just Breathe</title>
     <style>
         :root {
@@ -30,38 +30,42 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             transition: background-color 0.3s ease, color 0.3s ease;
-            
-            /* RESPONSIVE FIXES */
             margin: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center; /* Center vertically if space allows */
-            min-height: 100vh;       /* Allow scrolling if content is taller */
-            padding: 80px 20px 20px 20px; /* Top padding clears the Nav Bar */
+            /* Center vertically, but allow scroll on tiny screens */
+            justify-content: center; 
+            min-height: 100vh;      
+            /* Padding top accounts for Nav Bar (approx 60px) + breathing room */
+            padding: 70px 10px 10px 10px; 
             box-sizing: border-box;
+            overscroll-behavior: none; /* Prevents bounce effect on mobile */
         }
 
         .widget-container {
             position: relative;
             background: var(--container-bg);
-            padding: 50px 20px 30px 20px; /* Reduced side padding for mobile */
+            /* Tighter padding for mobile */
+            padding: 25px 20px 20px 20px; 
             border-radius: 20px;
             box-shadow: 0 10px 25px var(--shadow);
             text-align: center;
-            
-            /* RESPONSIVE FIXES */
-            width: 100%;        /* Fluid width */
-            max-width: 480px;   /* Cap at 480px */
+            width: 100%;
+            max-width: 480px;
+            /* Flex layout to distribute space evenly inside the card */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
             transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         /* --- TITLE STYLE --- */
         .app-title {
-            margin: 0 0 25px 0;
-            font-size: 2rem;
+            margin: 0 0 15px 0; /* Reduced margin */
+            font-size: 1.8rem;  /* Slightly smaller */
             font-weight: 800;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             color: var(--text-main);
             text-transform: uppercase;
         }
@@ -74,11 +78,12 @@
             background: transparent;
             border: 1px solid var(--toggle-border);
             color: var(--text-muted);
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
             cursor: pointer;
             transition: all 0.2s;
+            z-index: 10;
         }
 
         .theme-switch:hover {
@@ -89,35 +94,28 @@
         /* Tech Buttons */
         .tech-buttons {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             justify-content: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap; /* Wrap buttons on tiny screens */
+            margin-bottom: 15px; /* Reduced margin */
+            width: 100%;
         }
 
         .tech-btn {
             flex: 1;
-            min-width: 80px; /* Prevent squishing too much */
-            padding: 12px 5px;
+            padding: 10px 2px; /* Tighter padding */
             border: none;
-            border-radius: 10px;
-            font-size: 0.9rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
             font-weight: 600;
             color: white;
             cursor: pointer;
             opacity: 0.6;
-            transform: scale(0.95);
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: scale(0.98);
+            transition: all 0.2s;
         }
 
-        .tech-btn:hover { opacity: 0.8; transform: scale(0.98); }
-
-        .tech-btn.active {
-            opacity: 1;
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            z-index: 2;
-        }
+        .tech-btn:hover { opacity: 0.8; }
+        .tech-btn.active { opacity: 1; transform: scale(1.02); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 
         .btn-478 { background-color: #77dd77; } 
         .btn-box { background-color: #FFB347; } 
@@ -127,38 +125,41 @@
         canvas {
             display: block;
             margin: 0 auto;
-            max-width: 100%; /* Shrink on small screens */
-            height: auto;    /* Maintain aspect ratio */
+            max-width: 100%;
+            /* Limit height on mobile so controls aren't pushed off */
+            max-height: 40vh; 
+            width: auto;
+            object-fit: contain;
         }
 
         .status-text {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 600;
-            margin-top: 15px;
+            margin-top: 10px;
             color: var(--text-sub);
-            min-height: 2rem;
+            min-height: 1.8rem;
         }
         
         .timer-text {
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: var(--text-muted);
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             min-height: 1.2rem;
         }
 
         .controls {
-            margin-top: 20px;
+            margin-top: 10px;
             border-top: 1px solid var(--text-muted);
-            padding-top: 20px;
+            padding-top: 15px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
         }
 
         .input-group {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
             justify-content: center;
             width: 100%;
@@ -166,26 +167,25 @@
 
         select {
             padding: 10px;
-            border-radius: 5px;
+            border-radius: 8px;
             border: 1px solid var(--text-muted);
             font-size: 1rem;
             background-color: var(--bg-color);
             color: var(--text-main);
-            flex-grow: 1; /* Fill space */
-            max-width: 200px;
+            flex-grow: 1;
         }
         
         .action-btn {
-            padding: 10px 20px;
+            padding: 10px 25px;
             background-color: var(--text-main);
             color: var(--container-bg);
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
             font-weight: bold;
-            white-space: nowrap; /* Prevent text wrapping */
+            white-space: nowrap;
         }
         
         .action-btn.stop {
@@ -194,8 +194,6 @@
             width: 100%;
         }
         
-        .action-btn:hover { opacity: 0.9; transform: translateY(-1px); }
-
         .session-info {
             font-size: 0.9rem;
             color: var(--text-sub);
@@ -203,25 +201,25 @@
             padding: 5px 15px;
             border-radius: 15px;
             display: none; 
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .legend {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-muted);
-            margin-top: 10px;
+            margin-top: 5px;
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 10px;
             flex-wrap: wrap;
         }
 
         .dot {
-            height: 10px;
-            width: 10px;
+            height: 8px;
+            width: 8px;
             border-radius: 50%;
             display: inline-block;
-            margin-right: 5px;
+            margin-right: 4px;
         }
     </style>
 </head>
@@ -240,7 +238,7 @@
 
     <div class="session-info" id="overallTimer">Time Remaining: 00:00</div>
     
-    <canvas id="breathCanvas" width="400" height="400"></canvas>
+    <canvas id="breathCanvas" width="350" height="350"></canvas>
     
     <div class="status-text" id="statusText">Ready?</div>
     <div class="timer-text" id="phaseTimerText"></div>
@@ -275,10 +273,11 @@
     const legendDiv = document.getElementById('legend');
     const techButtons = document.querySelectorAll('.tech-btn');
 
+    // Adjusted sizes for smaller canvas default
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const minSize = 100;
-    const maxSize = 250;
+    const minSize = 80;
+    const maxSize = 220;
     
     const techniques = {
         '478': {
