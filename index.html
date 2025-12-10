@@ -56,6 +56,16 @@
             transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
 
+        /* --- TITLE STYLE --- */
+        .app-title {
+            margin: 0 0 25px 0;
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: var(--text-main);
+            text-transform: uppercase;
+        }
+
         /* Toggle Switch */
         .theme-switch {
             position: absolute;
@@ -219,6 +229,8 @@
 
 <div class="widget-container">
     <button class="theme-switch" onclick="toggleTheme()">Dark Mode</button>
+    
+    <h1 class="app-title">JUST BREATHE</h1>
 
     <div class="tech-buttons">
         <button class="tech-btn btn-478 active" id="btn-478" onclick="selectTechnique('478')">4-7-8 Relax</button>
