@@ -11,8 +11,6 @@
             --text-main: #333;
             --text-sub: #555;
             --text-muted: #888;
-            --accent-btn: #333;
-            --accent-btn-text: white;
             --shadow: rgba(0,0,0,0.1);
         }
 
@@ -22,8 +20,6 @@
             --text-main: #f0f0f0;
             --text-sub: #ccc;
             --text-muted: #aaa;
-            --accent-btn: #f0f0f0;
-            --accent-btn-text: #333;
             --shadow: rgba(0,0,0,0.3);
         }
 
@@ -52,24 +48,49 @@
             border-radius: 20px;
             box-shadow: 0 10px 25px var(--shadow);
             text-align: center;
-            width: 450px;
+            width: 480px; /* Widened slightly for buttons */
             transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .technique-selector {
-            margin-bottom: 20px;
+        /* --- New Button Styles --- */
+        .tech-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 25px;
         }
 
-        select {
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid var(--text-muted);
-            font-size: 1rem;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            width: 100%;
-            margin-bottom: 10px;
+        .tech-btn {
+            flex: 1;
+            padding: 12px 5px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            opacity: 0.6;
+            transform: scale(0.95);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+
+        .tech-btn:hover {
+            opacity: 0.8;
+            transform: scale(0.98);
+        }
+
+        .tech-btn.active {
+            opacity: 1;
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 2;
+        }
+
+        /* Specific Colors for Buttons */
+        .btn-478 { background-color: #77dd77; } /* Pastel Green */
+        .btn-box { background-color: #FFB347; } /* Pastel Orange */
+        .btn-333 { background-color: #b39eb5; } /* Pastel Purple */
+
 
         canvas {
             display: block;
@@ -107,11 +128,20 @@
             align-items: center;
             justify-content: center;
         }
+
+        select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--text-muted);
+            font-size: 1rem;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
         
-        button {
+        .action-btn {
             padding: 10px 30px;
-            background-color: var(--accent-btn);
-            color: var(--accent-btn-text);
+            background-color: var(--text-main);
+            color: var(--container-bg);
             border: none;
             border-radius: 5px;
             font-size: 1rem;
@@ -120,12 +150,12 @@
             font-weight: bold;
         }
         
-        button.stop {
+        .action-btn.stop {
             background-color: #e74c3c;
             color: white;
         }
         
-        button:hover {
+        .action-btn:hover {
             opacity: 0.9;
             transform: translateY(-1px);
         }
@@ -177,12 +207,11 @@
 </div>
 
 <div class="widget-container">
-    <div class="technique-selector">
-        <select id="techniqueSelect" onchange="changeTechnique()">
-            <option value="478">4-7-8 (Deep Relaxation)</option>
-            <option value="box">Box Breathing (Focus)</option>
-            <option value="333">3-3-3 (Calming Triangle)</option>
-        </select>
+    
+    <div class="tech-buttons">
+        <button class="tech-btn btn-478 active" id="btn-478" onclick="selectTechnique('478')">4-7-8 Relax</button>
+        <button class="tech-btn btn-box" id="btn-box" onclick="selectTechnique('box')">Box Focus</button>
+        <button class="tech-btn btn-333" id="btn-333" onclick="selectTechnique('333')">3-3-3 Calm</button>
     </div>
 
     <div class="session-info" id="overallTimer">Time Remaining: 00:00</div>
@@ -201,13 +230,12 @@
                 <option value="4">4 Minutes</option>
                 <option value="5">5 Minutes</option>
             </select>
-            <button onclick="startSession()" id="actionBtn">Start</button>
+            <button onclick="startSession()" id="actionBtn" class="action-btn">Start</button>
         </div>
         
-        <button onclick="stopSession()" id="stopBtn" class="stop" style="display:none;">End Session</button>
+        <button onclick="stopSession()" id="stopBtn" class="action-btn stop" style="display:none;">End Session</button>
 
-        <div class="legend" id="legend">
-            </div>
+        <div class="legend" id="legend"></div>
     </div>
 </div>
 
@@ -219,8 +247,8 @@
     const overallTimerDiv = document.getElementById('overallTimer');
     const startControls = document.getElementById('startControls');
     const stopBtn = document.getElementById('stopBtn');
-    const techniqueSelect = document.getElementById('techniqueSelect');
     const legendDiv = document.getElementById('legend');
+    const techButtons = document.querySelectorAll('.tech-btn');
 
     // --- Configuration ---
     const centerX = canvas.width / 2;
@@ -228,7 +256,6 @@
     const minSize = 100;
     const maxSize = 250;
     
-    // Techniques Dictionary
     const techniques = {
         '478': {
             phases: [
@@ -257,7 +284,6 @@
     let currentTechKey = '478';
     let currentPhases = techniques['478'].phases;
 
-    // State Variables
     let isRunning = false;
     let startTime = null;
     let sessionEndTime = null;
@@ -265,10 +291,15 @@
 
     // --- Logic ---
 
-    function changeTechnique() {
+    function selectTechnique(key) {
         if(isRunning) stopSession();
-        currentTechKey = techniqueSelect.value;
-        currentPhases = techniques[currentTechKey].phases;
+        currentTechKey = key;
+        currentPhases = techniques[key].phases;
+        
+        // Update Buttons Visuals
+        techButtons.forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`btn-${key}`).classList.add('active');
+        
         updateLegend();
         drawIdle();
     }
@@ -308,7 +339,9 @@
         startControls.style.display = 'none';
         stopBtn.style.display = 'block';
         overallTimerDiv.style.display = 'inline-block';
-        techniqueSelect.disabled = true;
+        
+        // Disable technique buttons
+        techButtons.forEach(btn => btn.disabled = true);
         
         requestAnimationFrame(loop);
     }
@@ -320,7 +353,9 @@
         startControls.style.display = 'flex';
         stopBtn.style.display = 'none';
         overallTimerDiv.style.display = 'none';
-        techniqueSelect.disabled = false;
+        
+        // Re-enable technique buttons
+        techButtons.forEach(btn => btn.disabled = false);
         
         statusDiv.innerText = finishedNaturally ? "Session Complete" : "Stopped";
         statusDiv.style.color = "var(--text-main)";
