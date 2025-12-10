@@ -2,26 +2,326 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tide Watcher</title> <style>
-        /* Shared variables so Dark Mode works via the Nav logic later */
-        :root { --bg-color: #f0f4f8; --text-main: #333; }
-        [data-theme="dark"] { --bg-color: #1a1a1a; --text-main: #f0f0f0; }
-        
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EMDR Light Bar</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --container-bg: white;
+            --text-main: #333;
+            --text-sub: #555;
+            --text-muted: #888;
+            --shadow: rgba(0,0,0,0.1);
+            --toggle-border: #ddd;
+            /* EMDR Specific Colors */
+            --ball-color: #007bff;
+            --track-color: #e9ecef;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --container-bg: #2d2d2d;
+            --text-main: #f0f0f0;
+            --text-sub: #ccc;
+            --text-muted: #aaa;
+            --shadow: rgba(0,0,0,0.3);
+            --toggle-border: #555;
+            --ball-color: #4dabf7;
+            --track-color: #444;
+        }
+
         body {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
             margin: 0;
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
         }
+
+        .widget-container {
+            position: relative;
+            background: var(--container-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px var(--shadow);
+            text-align: center;
+            
+            width: 95%;
+            /* WIDER MAX-WIDTH FOR EMDR - Eyes need to travel! */
+            max-width: 800px; 
+            max-height: calc(100dvh - 80px);
+            
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .app-title {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--text-main);
+            text-transform: uppercase;
+        }
+
+        .theme-switch {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: 1px solid var(--toggle-border);
+            color: var(--text-muted);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            width: 100%; /* Fill the container */
+            height: 150px; /* Fixed height for the "Bar" look */
+            border-radius: 10px;
+            background-color: var(--track-color); /* Visible track */
+            transition: background-color 0.3s;
+        }
+
+        .controls {
+            border-top: 1px solid var(--text-muted);
+            padding-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 90%;
+            margin: 0 auto;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            white-space: nowrap;
+            min-width: 60px;
+            text-align: left;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--text-main);
+        }
+
+        /* Color Toggles */
+        .color-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .color-btn {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .color-btn:hover { transform: scale(1.1); }
+        .color-btn.active { border-color: var(--text-main); transform: scale(1.2); }
+
+        .btn-blue { background-color: #007bff; }
+        .btn-green { background-color: #28a745; }
+        .btn-orange { background-color: #fd7e14; }
+        .btn-red { background-color: #dc3545; }
+
+        /* Sound Toggle */
+        .sound-btn {
+            background: none;
+            border: 1px solid var(--text-muted);
+            color: var(--text-muted);
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .sound-btn.active {
+            background-color: var(--text-main);
+            color: var(--container-bg);
+            border-color: var(--text-main);
+        }
+
     </style>
 </head>
 <body>
-    <h1>Work in Progress...</h1>
-    <script src="nav.js"></script>
+
+<div class="widget-container">
+    <button class="theme-switch" onclick="toggleTheme()">Dark Mode</button>
+    
+    <h1 class="app-title">EMDR Light</h1>
+
+    <canvas id="emdrCanvas" width="800" height="150"></canvas>
+    
+    <div class="controls">
+        
+        <div class="control-row">
+            <label>Speed</label>
+            <input type="range" id="speedSlider" min="1" max="25" step="1" value="10">
+        </div>
+
+        <div class="control-row">
+            <label>Size</label>
+            <input type="range" id="sizeSlider" min="10" max="50" step="1" value="25">
+        </div>
+
+        <div class="control-row">
+            <div class="color-options">
+                <button class="color-btn btn-blue active" onclick="setColor('#007bff')"></button>
+                <button class="color-btn btn-green" onclick="setColor('#28a745')"></button>
+                <button class="color-btn btn-orange" onclick="setColor('#fd7e14')"></button>
+                <button class="color-btn btn-red" onclick="setColor('#dc3545')"></button>
+            </div>
+            
+            <button class="sound-btn" id="soundBtn" onclick="toggleSound()">Sound: OFF</button>
+        </div>
+    </div>
+</div>
+
+<script src="nav.js"></script>
+<script>
+    const canvas = document.getElementById('emdrCanvas');
+    const ctx = canvas.getContext('2d');
+    const speedSlider = document.getElementById('speedSlider');
+    const sizeSlider = document.getElementById('sizeSlider');
+    const soundBtn = document.getElementById('soundBtn');
+
+    // State
+    let ballColor = '#007bff';
+    let x = 400; // Start middle
+    let direction = 1; // 1 = right, -1 = left
+    let soundEnabled = false;
+    
+    // Web Audio API Context (Created on first user interaction)
+    let audioCtx = null;
+
+    function initAudio() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+        }
+    }
+
+    function playTick() {
+        if (!soundEnabled || !audioCtx) return;
+        
+        // Simple synth "tick"
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        // High pitch, short duration
+        osc.frequency.value = 800; 
+        osc.type = 'sine';
+        
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    function toggleSound() {
+        initAudio(); // Browser requires interaction to start AudioContext
+        
+        // Resume if suspended (common browser policy)
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        soundEnabled = !soundEnabled;
+        soundBtn.innerText = soundEnabled ? "Sound: ON" : "Sound: OFF";
+        soundBtn.classList.toggle('active');
+    }
+
+    function setColor(color) {
+        ballColor = color;
+        // Update UI active state
+        document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        body.setAttribute('data-theme', newTheme);
+    }
+
+    function draw() {
+        // Clear screen
+        const width = canvas.width;
+        const height = canvas.height;
+        ctx.clearRect(0, 0, width, height);
+
+        // Get Params
+        const radius = parseInt(sizeSlider.value);
+        const speed = parseInt(speedSlider.value);
+
+        // Update Position (Linear Movement)
+        x += speed * direction;
+
+        // Collision Detection
+        // Right Wall
+        if (x + radius >= width) {
+            x = width - radius; // Clamp
+            direction = -1; // Reverse
+            playTick();
+        } 
+        // Left Wall
+        else if (x - radius <= 0) {
+            x = radius; // Clamp
+            direction = 1; // Reverse
+            playTick();
+        }
+
+        // Draw Ball
+        ctx.beginPath();
+        ctx.arc(x, height / 2, radius, 0, Math.PI * 2);
+        ctx.fillStyle = ballColor;
+        
+        // Add a slight glow/shadow for visual appeal
+        ctx.shadowColor = ballColor;
+        ctx.shadowBlur = 15;
+        
+        ctx.fill();
+        ctx.shadowBlur = 0; // Reset shadow so it doesn't affect other things
+
+        requestAnimationFrame(draw);
+    }
+
+    // Start
+    draw();
+
+</script>
+
 </body>
 </html>
