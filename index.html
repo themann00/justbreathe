@@ -12,6 +12,7 @@
             --text-sub: #555;
             --text-muted: #888;
             --shadow: rgba(0,0,0,0.1);
+            --toggle-border: #ddd;
         }
 
         [data-theme="dark"] {
@@ -21,6 +22,7 @@
             --text-sub: #ccc;
             --text-muted: #aaa;
             --shadow: rgba(0,0,0,0.3);
+            --toggle-border: #555;
         }
 
         body {
@@ -36,23 +38,38 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        .top-bar {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-        }
-
         .widget-container {
+            position: relative; /* Crucial for positioning the toggle inside */
             background: var(--container-bg);
-            padding: 40px;
+            padding: 50px 40px 40px 40px; /* Added top padding to clear the button */
             border-radius: 20px;
             box-shadow: 0 10px 25px var(--shadow);
             text-align: center;
-            width: 480px; /* Widened slightly for buttons */
+            width: 480px;
             transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        /* --- New Button Styles --- */
+        /* --- Toggle Switch (Now inside) --- */
+        .theme-switch {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: 1px solid var(--toggle-border);
+            color: var(--text-muted);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .theme-switch:hover {
+            color: var(--text-main);
+            border-color: var(--text-main);
+        }
+
+        /* --- Button Styles --- */
         .tech-buttons {
             display: flex;
             gap: 10px;
@@ -86,10 +103,9 @@
             z-index: 2;
         }
 
-        /* Specific Colors for Buttons */
-        .btn-478 { background-color: #77dd77; } /* Pastel Green */
-        .btn-box { background-color: #FFB347; } /* Pastel Orange */
-        .btn-333 { background-color: #b39eb5; } /* Pastel Purple */
+        .btn-478 { background-color: #77dd77; } 
+        .btn-box { background-color: #FFB347; } 
+        .btn-333 { background-color: #b39eb5; } 
 
 
         canvas {
@@ -187,30 +203,16 @@
             display: inline-block;
             margin-right: 5px;
         }
-
-        /* Toggle Switch */
-        .theme-switch {
-            background: none;
-            border: 1px solid var(--text-main);
-            color: var(--text-main);
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
 
-<div class="top-bar">
-    <button class="theme-switch" onclick="toggleTheme()">Dark Mode</button>
-</div>
-
 <div class="widget-container">
-    
+    <button class="theme-switch" onclick="toggleTheme()">Dark Mode</button>
+
     <div class="tech-buttons">
         <button class="tech-btn btn-478 active" id="btn-478" onclick="selectTechnique('478')">4-7-8 Relax</button>
-        <button class="tech-btn btn-box" id="btn-box" onclick="selectTechnique('box')">4X4 Box Focus</button>
+        <button class="tech-btn btn-box" id="btn-box" onclick="selectTechnique('box')">Box Focus</button>
         <button class="tech-btn btn-333" id="btn-333" onclick="selectTechnique('333')">3-3-3 Calm</button>
     </div>
 
@@ -259,9 +261,9 @@
     const techniques = {
         '478': {
             phases: [
-                { name: 'inhale', duration: 4, label: "Breathe In...", color: '#77dd77' }, // Green
-                { name: 'hold', duration: 7, label: "Hold...", color: '#89CFF0' },         // Blue
-                { name: 'exhale', duration: 8, label: "Exhale Slowly...", color: '#b39eb5' } // Purple
+                { name: 'inhale', duration: 4, label: "Breathe In...", color: '#77dd77' },
+                { name: 'hold', duration: 7, label: "Hold...", color: '#89CFF0' },
+                { name: 'exhale', duration: 8, label: "Exhale Slowly...", color: '#b39eb5' }
             ]
         },
         'box': {
@@ -269,7 +271,7 @@
                 { name: 'inhale', duration: 4, label: "Breathe In...", color: '#77dd77' },
                 { name: 'hold', duration: 4, label: "Hold...", color: '#89CFF0' },
                 { name: 'exhale', duration: 4, label: "Breathe Out...", color: '#b39eb5' },
-                { name: 'hold_empty', duration: 4, label: "Rest...", color: '#FFB347' }    // Orange
+                { name: 'hold_empty', duration: 4, label: "Rest...", color: '#FFB347' }
             ]
         },
         '333': {
@@ -289,14 +291,11 @@
     let sessionEndTime = null;
     let animationFrameId = null;
 
-    // --- Logic ---
-
     function selectTechnique(key) {
         if(isRunning) stopSession();
         currentTechKey = key;
         currentPhases = techniques[key].phases;
         
-        // Update Buttons Visuals
         techButtons.forEach(btn => btn.classList.remove('active'));
         document.getElementById(`btn-${key}`).classList.add('active');
         
@@ -340,7 +339,6 @@
         stopBtn.style.display = 'block';
         overallTimerDiv.style.display = 'inline-block';
         
-        // Disable technique buttons
         techButtons.forEach(btn => btn.disabled = true);
         
         requestAnimationFrame(loop);
@@ -354,7 +352,6 @@
         stopBtn.style.display = 'none';
         overallTimerDiv.style.display = 'none';
         
-        // Re-enable technique buttons
         techButtons.forEach(btn => btn.disabled = false);
         
         statusDiv.innerText = finishedNaturally ? "Session Complete" : "Stopped";
