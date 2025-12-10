@@ -2,26 +2,298 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tide Watcher</title> <style>
-        /* Shared variables so Dark Mode works via the Nav logic later */
-        :root { --bg-color: #f0f4f8; --text-main: #333; }
-        [data-theme="dark"] { --bg-color: #1a1a1a; --text-main: #f0f0f0; }
-        
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Visual Mantra</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --container-bg: white;
+            --text-main: #333;
+            --text-sub: #555;
+            --text-muted: #888;
+            --shadow: rgba(0,0,0,0.1);
+            --toggle-border: #ddd;
+            --mantra-color: #4a90e2; /* Soft Blue */
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --container-bg: #2d2d2d;
+            --text-main: #f0f0f0;
+            --text-sub: #ccc;
+            --text-muted: #aaa;
+            --shadow: rgba(0,0,0,0.3);
+            --toggle-border: #555;
+            --mantra-color: #89CFF0; /* Lighter Blue */
+        }
+
         body {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
             margin: 0;
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
         }
+
+        .widget-container {
+            position: relative;
+            background: var(--container-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px var(--shadow);
+            text-align: center;
+            width: 95%;
+            max-width: 480px;
+            max-height: calc(100dvh - 80px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .app-title {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--text-main);
+            text-transform: uppercase;
+        }
+
+        .theme-switch {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: 1px solid var(--toggle-border);
+            color: var(--text-muted);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            width: 100%;
+            max-height: 40vh;
+            object-fit: contain;
+        }
+
+        .status-text {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin: 5px 0;
+            min-height: 1.5rem;
+        }
+
+        .controls {
+            border-top: 1px solid var(--text-muted);
+            padding-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 90%;
+            margin: 0 auto;
+        }
+
+        /* Input Styling */
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--text-muted);
+            background: var(--bg-color);
+            color: var(--text-main);
+            font-size: 1rem;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        /* Preset Buttons */
+        .preset-group {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .preset-btn {
+            background: none;
+            border: 1px solid var(--text-muted);
+            color: var(--text-muted);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover {
+            border-color: var(--text-main);
+            color: var(--text-main);
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--text-main);
+        }
+
     </style>
 </head>
 <body>
-    <h1>Work in Progress...</h1>
-    <script src="nav.js"></script>
+
+<div class="widget-container">
+    <button class="theme-switch" onclick="toggleTheme()">Dark Mode</button>
+    
+    <h1 class="app-title">Visual Mantra</h1>
+
+    <canvas id="mantraCanvas" width="600" height="300"></canvas>
+    
+    <div class="status-text" id="statusText">Breathe with the words...</div>
+    
+    <div class="controls">
+        <input type="text" id="mantraInput" value="I Am Calm" placeholder="Type your mantra..." oninput="updateMantra()">
+        
+        <div class="preset-group">
+            <button class="preset-btn" onclick="setMantra('Peace')">Peace</button>
+            <button class="preset-btn" onclick="setMantra('Focus')">Focus</button>
+            <button class="preset-btn" onclick="setMantra('Let Go')">Let Go</button>
+            <button class="preset-btn" onclick="setMantra('Strength')">Strength</button>
+        </div>
+
+        <div class="control-row">
+            <label>Duration</label>
+            <input type="range" id="speedSlider" min="3" max="10" step="0.5" value="5">
+        </div>
+    </div>
+</div>
+
+<script src="nav.js"></script>
+<script>
+    const canvas = document.getElementById('mantraCanvas');
+    const ctx = canvas.getContext('2d');
+    const input = document.getElementById('mantraInput');
+    const statusDiv = document.getElementById('statusText');
+    const speedSlider = document.getElementById('speedSlider');
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    let mantraText = "I Am Calm";
+    let time = 0;
+
+    function toggleTheme() {
+        const body = document.body;
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        body.setAttribute('data-theme', newTheme);
+    }
+
+    function updateMantra() {
+        mantraText = input.value;
+    }
+
+    function setMantra(text) {
+        input.value = text;
+        mantraText = text;
+    }
+
+    // Helper to scale font size based on text length
+    function getFontSize(text) {
+        const maxLength = 20; // Chars before scaling down
+        let size = 80;
+        if (text.length > 8) size = 60;
+        if (text.length > 12) size = 45;
+        if (text.length > maxLength) size = 30;
+        return size;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        // Update Physics
+        const cycleDuration = parseFloat(speedSlider.value);
+        const speed = (Math.PI * 2) / (cycleDuration * 60);
+        time += speed;
+
+        // Calculate Breath Cycle (0 to 1)
+        // Shifted so -PI/2 is start (0)
+        const sine = Math.sin(time - Math.PI/2); 
+        const opacity = (sine + 1) / 2; 
+
+        // --- VISUALS ---
+        
+        // 1. Get Color from CSS
+        const style = getComputedStyle(document.body);
+        const baseColor = style.getPropertyValue('--mantra-color').trim(); // Hex or name
+        
+        // Canvas needs RGBA for opacity, so we just use globalAlpha
+        ctx.save();
+        ctx.globalAlpha = Math.max(0.02, opacity); // Never go fully invisible (0.02 min)
+        
+        // 2. Text Setup
+        const fontSize = getFontSize(mantraText);
+        ctx.font = `bold ${fontSize}px "Segoe UI", sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = baseColor;
+
+        // 3. Glow Effect (Only at high opacity)
+        if (opacity > 0.8) {
+            ctx.shadowColor = baseColor;
+            ctx.shadowBlur = (opacity - 0.8) * 100; // Blur increases as we reach peak
+        }
+
+        // 4. Draw Text
+        // Slight scale effect for breathing feel (95% to 105%)
+        const scale = 0.95 + (opacity * 0.1);
+        ctx.translate(centerX, centerY);
+        ctx.scale(scale, scale);
+        ctx.fillText(mantraText, 0, 0);
+
+        ctx.restore();
+
+        // 5. Update Status Text
+        // Derivative (Cosine) tells us direction
+        const phase = Math.cos(time - Math.PI/2);
+        if (phase > 0.3) statusDiv.innerText = "Repeating (Inhale)...";
+        else if (phase < -0.3) statusDiv.innerText = "Fading (Exhale)...";
+        else statusDiv.innerText = opacity > 0.5 ? "Hold Awareness" : "Silence";
+
+        requestAnimationFrame(draw);
+    }
+
+    draw();
+
+</script>
+
 </body>
 </html>
