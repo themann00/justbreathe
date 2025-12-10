@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Just Breathe | TheMann00.com</title>
+    <title>Just Breathe</title>
     <style>
         :root {
             --bg-color: #f0f4f8;
@@ -28,28 +28,35 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            
+            /* RESPONSIVE FIXES */
+            margin: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            color: var(--text-main);
-            transition: background-color 0.3s ease, color 0.3s ease;
+            justify-content: center; /* Center vertically if space allows */
+            min-height: 100vh;       /* Allow scrolling if content is taller */
+            padding: 80px 20px 20px 20px; /* Top padding clears the Nav Bar */
+            box-sizing: border-box;
         }
 
         .widget-container {
-            position: relative; /* Crucial for positioning the toggle inside */
+            position: relative;
             background: var(--container-bg);
-            padding: 50px 40px 40px 40px; /* Added top padding to clear the button */
+            padding: 50px 20px 30px 20px; /* Reduced side padding for mobile */
             border-radius: 20px;
             box-shadow: 0 10px 25px var(--shadow);
             text-align: center;
-            width: 480px;
+            
+            /* RESPONSIVE FIXES */
+            width: 100%;        /* Fluid width */
+            max-width: 480px;   /* Cap at 480px */
             transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        /* --- Toggle Switch (Now inside) --- */
+        /* Toggle Switch */
         .theme-switch {
             position: absolute;
             top: 15px;
@@ -69,16 +76,18 @@
             border-color: var(--text-main);
         }
 
-        /* --- Button Styles --- */
+        /* Tech Buttons */
         .tech-buttons {
             display: flex;
             gap: 10px;
             justify-content: center;
             margin-bottom: 25px;
+            flex-wrap: wrap; /* Wrap buttons on tiny screens */
         }
 
         .tech-btn {
             flex: 1;
+            min-width: 80px; /* Prevent squishing too much */
             padding: 12px 5px;
             border: none;
             border-radius: 10px;
@@ -91,10 +100,7 @@
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .tech-btn:hover {
-            opacity: 0.8;
-            transform: scale(0.98);
-        }
+        .tech-btn:hover { opacity: 0.8; transform: scale(0.98); }
 
         .tech-btn.active {
             opacity: 1;
@@ -107,10 +113,12 @@
         .btn-box { background-color: #FFB347; } 
         .btn-333 { background-color: #b39eb5; } 
 
-
+        /* Canvas Responsive Fix */
         canvas {
             display: block;
             margin: 0 auto;
+            max-width: 100%; /* Shrink on small screens */
+            height: auto;    /* Maintain aspect ratio */
         }
 
         .status-text {
@@ -143,6 +151,7 @@
             gap: 10px;
             align-items: center;
             justify-content: center;
+            width: 100%;
         }
 
         select {
@@ -152,10 +161,12 @@
             font-size: 1rem;
             background-color: var(--bg-color);
             color: var(--text-main);
+            flex-grow: 1; /* Fill space */
+            max-width: 200px;
         }
         
         .action-btn {
-            padding: 10px 30px;
+            padding: 10px 20px;
             background-color: var(--text-main);
             color: var(--container-bg);
             border: none;
@@ -164,17 +175,16 @@
             cursor: pointer;
             transition: all 0.2s;
             font-weight: bold;
+            white-space: nowrap; /* Prevent text wrapping */
         }
         
         .action-btn.stop {
             background-color: #e74c3c;
             color: white;
+            width: 100%;
         }
         
-        .action-btn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
+        .action-btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
         .session-info {
             font-size: 0.9rem;
@@ -208,7 +218,6 @@
 <body>
 
 <div class="widget-container">
-    <h1>Just Breathe...</h1>
     <button class="theme-switch" onclick="toggleTheme()">Dark Mode</button>
 
     <div class="tech-buttons">
@@ -242,6 +251,7 @@
     </div>
 </div>
 
+<script src="nav.js"></script>
 <script>
     const canvas = document.getElementById('breathCanvas');
     const ctx = canvas.getContext('2d');
@@ -253,7 +263,6 @@
     const legendDiv = document.getElementById('legend');
     const techButtons = document.querySelectorAll('.tech-btn');
 
-    // --- Configuration ---
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
     const minSize = 100;
@@ -286,7 +295,6 @@
 
     let currentTechKey = '478';
     let currentPhases = techniques['478'].phases;
-
     let isRunning = false;
     let startTime = null;
     let sessionEndTime = null;
@@ -296,10 +304,8 @@
         if(isRunning) stopSession();
         currentTechKey = key;
         currentPhases = techniques[key].phases;
-        
         techButtons.forEach(btn => btn.classList.remove('active'));
         document.getElementById(`btn-${key}`).classList.add('active');
-        
         updateLegend();
         drawIdle();
     }
@@ -323,7 +329,6 @@
         if (ctx.roundRect) ctx.roundRect(x, y, minSize, minSize, 30);
         else ctx.rect(x, y, minSize, minSize);
         ctx.fill();
-        
         statusDiv.innerText = "Ready?";
         phaseTimerDiv.innerText = "";
     }
@@ -331,44 +336,32 @@
     function startSession() {
         const minutes = parseInt(document.getElementById('minuteSelect').value);
         const durationMs = minutes * 60 * 1000;
-        
         isRunning = true;
         startTime = performance.now();
         sessionEndTime = startTime + durationMs;
-        
         startControls.style.display = 'none';
         stopBtn.style.display = 'block';
         overallTimerDiv.style.display = 'inline-block';
-        
         techButtons.forEach(btn => btn.disabled = true);
-        
         requestAnimationFrame(loop);
     }
 
     function stopSession(finishedNaturally = false) {
         isRunning = false;
         cancelAnimationFrame(animationFrameId);
-        
         startControls.style.display = 'flex';
         stopBtn.style.display = 'none';
         overallTimerDiv.style.display = 'none';
-        
         techButtons.forEach(btn => btn.disabled = false);
-        
         statusDiv.innerText = finishedNaturally ? "Session Complete" : "Stopped";
         statusDiv.style.color = "var(--text-main)";
         phaseTimerDiv.innerText = finishedNaturally ? "Great job!" : "";
-        
         drawIdle();
     }
 
     function loop(currentTime) {
         if (!isRunning) return;
-
-        if (currentTime >= sessionEndTime) {
-            stopSession(true);
-            return;
-        }
+        if (currentTime >= sessionEndTime) { stopSession(true); return; }
 
         const msRemaining = sessionEndTime - currentTime;
         const totalSecondsRemaining = Math.ceil(msRemaining / 1000);
@@ -394,28 +387,22 @@
         }
 
         let size = minSize;
-        
         if (activePhase.name === 'inhale') {
             const progress = timeInPhase / (activePhase.duration * 1000);
             size = minSize + (maxSize - minSize) * Math.sin(progress * (Math.PI/2));
-            
         } else if (activePhase.name === 'hold') {
             size = maxSize + (Math.sin(timeInPhase * 0.005) * 5);
-            
         } else if (activePhase.name === 'exhale') {
             const progress = timeInPhase / (activePhase.duration * 1000);
             size = maxSize - (maxSize - minSize) * progress;
-            
         } else if (activePhase.name === 'hold_empty') {
             size = minSize + (Math.sin(timeInPhase * 0.005) * 3);
         }
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = activePhase.color;
-        
         const x = centerX - (size / 2);
         const y = centerY - (size / 2);
-        
         ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(x, y, size, size, 40);
         else ctx.rect(x, y, size, size);
@@ -424,7 +411,6 @@
         statusDiv.innerText = activePhase.label;
         statusDiv.style.color = activePhase.color;
         phaseTimerDiv.innerText = Math.ceil(activePhase.duration - (timeInPhase/1000)) + "s";
-
         animationFrameId = requestAnimationFrame(loop);
     }
 
@@ -438,9 +424,7 @@
 
     updateLegend();
     drawIdle();
-
 </script>
 
-<script src="nav.js"></script> 
 </body>
 </html>
