@@ -2,26 +2,293 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tide Watcher</title> <style>
-        /* Shared variables so Dark Mode works via the Nav logic later */
-        :root { --bg-color: #f0f4f8; --text-main: #333; }
-        [data-theme="dark"] { --bg-color: #1a1a1a; --text-main: #f0f0f0; }
-        
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tide Watcher</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --container-bg: white;
+            --text-main: #333;
+            --text-sub: #555;
+            --text-muted: #888;
+            --shadow: rgba(0,0,0,0.1);
+            --toggle-border: #ddd;
+            /* Ocean Colors */
+            --wave-front: rgba(0, 119, 190, 0.8);
+            --wave-back: rgba(0, 119, 190, 0.4);
+            --porthole-border: #ddd;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --container-bg: #2d2d2d;
+            --text-main: #f0f0f0;
+            --text-sub: #ccc;
+            --text-muted: #aaa;
+            --shadow: rgba(0,0,0,0.3);
+            --toggle-border: #555;
+            --wave-front: rgba(72, 209, 204, 0.7); /* Teal glow */
+            --wave-back: rgba(72, 209, 204, 0.3);
+            --porthole-border: #444;
+        }
+
         body {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
             margin: 0;
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
         }
+
+        .widget-container {
+            position: relative;
+            background: var(--container-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px var(--shadow);
+            text-align: center;
+            width: 95%;
+            max-width: 480px;
+            max-height: calc(100dvh - 80px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .app-title {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--text-main);
+            text-transform: uppercase;
+        }
+
+        /* Toggle Switch */
+        .theme-switch {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: 1px solid var(--toggle-border);
+            color: var(--text-muted);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        canvas {
+            display: block;
+            margin: 15px auto;
+            width: auto;
+            max-height: 40vh; /* Responsive sizing */
+            max-width: 100%;
+            object-fit: contain;
+            flex-shrink: 1;
+        }
+
+        .status-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            margin: 5px 0;
+            min-height: 2rem;
+        }
+        
+        .controls {
+            border-top: 1px solid var(--text-muted);
+            padding-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 80%;
+            margin: 0 auto;
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--text-main);
+        }
+
+        .speed-readout {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: -5px;
+        }
+
     </style>
 </head>
 <body>
-    <h1>Work in Progress...</h1>
-    <script src="nav.js"></script>
+
+<div class="widget-container">
+    <button class="theme-switch" onclick="toggleTheme()">Dark Mode</button>
+    
+    <h1 class="app-title">Tide Watcher</h1>
+
+    <div class="status-text" id="statusText">Breathe In...</div>
+
+    <canvas id="tideCanvas" width="350" height="350"></canvas>
+    
+    <div class="controls">
+        <div class="slider-group">
+            <label for="speedSlider">Ocean Rhythm</label>
+            <input type="range" id="speedSlider" min="3" max="10" step="0.5" value="5" oninput="updateSpeed()">
+            <div class="speed-readout" id="speedReadout">5 seconds per breath</div>
+        </div>
+    </div>
+</div>
+
+<script src="nav.js"></script>
+<script>
+    const canvas = document.getElementById('tideCanvas');
+    const ctx = canvas.getContext('2d');
+    const statusDiv = document.getElementById('statusText');
+    const slider = document.getElementById('speedSlider');
+    const readout = document.getElementById('speedReadout');
+
+    // Configuration
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = 160; // Size of the porthole
+
+    // Wave Physics
+    let time = 0;
+    let breathDuration = 5; // Seconds per full cycle (inhale + exhale)
+
+    function updateSpeed() {
+        breathDuration = parseFloat(slider.value);
+        readout.innerText = `${breathDuration} seconds per breath`;
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        body.setAttribute('data-theme', newTheme);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        // 1. Get Colors from CSS Variables
+        const styles = getComputedStyle(document.body);
+        const colorFront = styles.getPropertyValue('--wave-front').trim();
+        const colorBack = styles.getPropertyValue('--wave-back').trim();
+        const borderColor = styles.getPropertyValue('--porthole-border').trim();
+
+        // 2. Draw Porthole Border
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius + 5, 0, Math.PI * 2);
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 8;
+        ctx.stroke();
+
+        // 3. Create Clipping Region (The circular glass)
+        ctx.save(); // Save state before clipping
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.clip(); // Restrict drawing to inside the circle
+
+        // 4. Calculate Tide Level (Breathing Cycle)
+        // Convert time to a breath cycle (0 to 1 to 0)
+        // We use Math.sin based on breathDuration
+        // time is incremented by 1/60th of a second (roughly)
+        const cycleSpeed = (Math.PI * 2) / (breathDuration * 60);
+        time += cycleSpeed;
+
+        // Sine gives -1 to 1. We map it to the canvas height.
+        // -1 (Low tide/Bottom) to 1 (High tide/Top)
+        // We invert Y because 0 is top in Canvas.
+        const tideSine = Math.sin(time - Math.PI/2); 
+        
+        // Map sine (-1 to 1) to vertical pixels
+        // High tide = centerY - 120 (Top of circleish)
+        // Low tide = centerY + 120 (Bottom of circleish)
+        const waterLevelY = centerY - (tideSine * 120);
+
+        // 5. Draw Waves
+        // Helper function to draw a sine wave shape
+        function drawWave(offset, amplitude, frequency, speed, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            
+            // Move across the width of the canvas
+            for (let x = 0; x <= width; x++) {
+                // Wave Equation: y = level + sin(x * freq + speed_offset) * amp
+                const y = waterLevelY + Math.sin(x * frequency + time * speed + offset) * amplitude;
+                
+                // First point needs moveTo, others lineTo
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            
+            // Close the shape at the bottom corners so it fills
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Draw Back Wave (Slower, flatter)
+        drawWave(0, 15, 0.01, 2, colorBack);
+        
+        // Draw Front Wave (Faster, choppier)
+        drawWave(2, 20, 0.015, 3, colorFront);
+
+        // 6. Restore Context (remove clipping)
+        ctx.restore();
+
+        // 7. Update Text Logic
+        // Derivative of sine is cosine. Positive cos = rising (inhale).
+        const isRising = Math.cos(time - Math.PI/2) > 0;
+        
+        // Smoothing the text transition logic
+        // If we are very close to the top or bottom, we are "Holding"
+        const threshold = 0.2; // Sensitivity for "turnaround" points
+        const phase = Math.cos(time - Math.PI/2);
+
+        if (phase > threshold) {
+            statusDiv.innerText = "Tide Coming In (Inhale)";
+        } else if (phase < -threshold) {
+            statusDiv.innerText = "Tide Going Out (Exhale)";
+        } else {
+            // At the peaks/troughs
+            statusDiv.innerText = "Hold...";
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    // Start Animation
+    draw();
+
+</script>
+
 </body>
 </html>
