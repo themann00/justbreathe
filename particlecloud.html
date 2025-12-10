@@ -2,26 +2,321 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tide Watcher</title> <style>
-        /* Shared variables so Dark Mode works via the Nav logic later */
-        :root { --bg-color: #f0f4f8; --text-main: #333; }
-        [data-theme="dark"] { --bg-color: #1a1a1a; --text-main: #f0f0f0; }
-        
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Particle Focus</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --container-bg: white;
+            --text-main: #333;
+            --text-sub: #555;
+            --text-muted: #888;
+            --shadow: rgba(0,0,0,0.1);
+            --toggle-border: #ddd;
+            /* Particle Colors (Light Mode) */
+            --color-chaos: 255, 100, 100; /* Reddish */
+            --color-order: 0, 150, 255;   /* Blueish */
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --container-bg: #2d2d2d;
+            --text-main: #f0f0f0;
+            --text-sub: #ccc;
+            --text-muted: #aaa;
+            --shadow: rgba(0,0,0,0.3);
+            --toggle-border: #555;
+            /* Particle Colors (Dark Mode) */
+            --color-chaos: 255, 80, 80;
+            --color-order: 0, 255, 200;   /* Cyan/Teal */
+        }
+
         body {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
             margin: 0;
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            user-select: none; /* Prevent text selection while holding */
         }
+
+        .widget-container {
+            position: relative;
+            background: var(--container-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px var(--shadow);
+            text-align: center;
+            width: 95%;
+            max-width: 480px;
+            max-height: calc(100dvh - 80px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer; /* Suggest interaction */
+        }
+
+        /* Visual cue that the card is interactive */
+        .widget-container:active {
+            transform: scale(0.99);
+            box-shadow: 0 5px 15px var(--shadow);
+        }
+
+        .app-title {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--text-main);
+            text-transform: uppercase;
+        }
+
+        .theme-switch {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: 1px solid var(--toggle-border);
+            color: var(--text-muted);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            width: auto;
+            max-height: 50vh;
+            max-width: 100%;
+            object-fit: contain;
+            flex-shrink: 1;
+            /* Prevent touch scrolling on canvas */
+            touch-action: none; 
+        }
+
+        .status-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            margin: 10px 0;
+            min-height: 2rem;
+            transition: color 0.3s;
+        }
+        
+        .instruction-sub {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
     </style>
 </head>
 <body>
-    <h1>Work in Progress...</h1>
-    <script src="nav.js"></script>
+
+<div class="widget-container" id="interactionArea">
+    <button class="theme-switch" onclick="toggleTheme(event)">Dark Mode</button>
+    
+    <h1 class="app-title">Particle Cloud</h1>
+
+    <div class="status-text" id="statusText">Chaos</div>
+    
+    <canvas id="particleCanvas" width="400" height="400"></canvas>
+    
+    <div class="instruction-sub">Click & Hold / Touch & Hold<br>to center your thoughts</div>
+</div>
+
+<script src="nav.js"></script>
+<script>
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    const statusDiv = document.getElementById('statusText');
+    const interactionArea = document.getElementById('interactionArea');
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    // --- State ---
+    let isHolding = false;
+    let particles = [];
+    const particleCount = 180;
+
+    // --- Physics Constants ---
+    const friction = 0.96; // Air resistance (slowing down)
+    const attraction = 0.03; // Strength of pull to center
+    const chaosSpeed = 2; // Max speed in chaos mode
+    
+    // --- Colors (RGB) ---
+    // We store RGB as array to interpolate
+    let chaosColor = [255, 100, 100]; 
+    let orderColor = [0, 150, 255]; 
+    let currentColor = [...chaosColor];
+
+    class Particle {
+        constructor() {
+            this.reset();
+        }
+
+        reset() {
+            // Random position
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            
+            // Random velocity
+            this.vx = (Math.random() - 0.5) * chaosSpeed;
+            this.vy = (Math.random() - 0.5) * chaosSpeed;
+            
+            this.size = Math.random() * 3 + 1; // Size 1 to 4
+        }
+
+        update() {
+            if (isHolding) {
+                // --- ORDER MODE (Attraction) ---
+                
+                // Calculate distance to center
+                const dx = centerX - this.x;
+                const dy = centerY - this.y;
+                
+                // Apply force towards center
+                this.vx += dx * attraction * 0.1; // 0.1 scales the force down
+                this.vy += dy * attraction * 0.1;
+
+                // Apply Strong Friction (Damping) so they settle
+                this.vx *= friction;
+                this.vy *= friction;
+
+            } else {
+                // --- CHAOS MODE (Brownian-ish motion) ---
+                
+                // Add tiny random jitters
+                this.vx += (Math.random() - 0.5) * 0.2;
+                this.vy += (Math.random() - 0.5) * 0.2;
+
+                // Clamp max speed
+                const speed = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+                if (speed > chaosSpeed) {
+                    this.vx = (this.vx / speed) * chaosSpeed;
+                    this.vy = (this.vy / speed) * chaosSpeed;
+                }
+
+                // Bounce off walls
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            }
+
+            // Move
+            this.x += this.vx;
+            this.y += this.vy;
+        }
+
+        draw(r, g, b) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.fill();
+        }
+    }
+
+    // Initialize Particles
+    for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle());
+    }
+
+    function toggleTheme(e) {
+        if(e) e.stopPropagation(); // Don't trigger the "Hold" action
+        const body = document.body;
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        body.setAttribute('data-theme', newTheme);
+        
+        // Update physics colors based on CSS variables manually for now
+        // (Or just hardcode logic since Canvas doesn't read CSS vars easily every frame)
+        if (newTheme === 'dark') {
+            chaosColor = [255, 80, 80];
+            orderColor = [0, 255, 200];
+        } else {
+            chaosColor = [255, 100, 100];
+            orderColor = [0, 150, 255];
+        }
+    }
+
+    // --- Interaction Listeners ---
+    function startHold(e) { 
+        if(e.target.classList.contains('theme-switch')) return;
+        e.preventDefault(); 
+        isHolding = true; 
+        statusDiv.innerText = "Centering...";
+        statusDiv.style.color = `rgb(${orderColor.join(',')})`;
+    }
+    
+    function endHold(e) { 
+        e.preventDefault(); 
+        isHolding = false; 
+        statusDiv.innerText = "Chaos";
+        statusDiv.style.color = "var(--text-sub)";
+        
+        // Explode particles slightly outward when releasing for effect
+        particles.forEach(p => {
+            p.vx = (Math.random() - 0.5) * 5;
+            p.vy = (Math.random() - 0.5) * 5;
+        });
+    }
+
+    // Mouse
+    interactionArea.addEventListener('mousedown', startHold);
+    window.addEventListener('mouseup', endHold);
+
+    // Touch
+    interactionArea.addEventListener('touchstart', startHold, {passive: false});
+    window.addEventListener('touchend', endHold);
+
+    // Animation Loop
+    function loop() {
+        ctx.clearRect(0, 0, width, height);
+
+        // Color Interpolation (Smooth shift between Red and Blue)
+        const targetColor = isHolding ? orderColor : chaosColor;
+        
+        // Lerp (Linear Interpolation) for color R, G, B
+        // Factor 0.05 determines how fast the color changes
+        currentColor[0] += (targetColor[0] - currentColor[0]) * 0.05;
+        currentColor[1] += (targetColor[1] - currentColor[1]) * 0.05;
+        currentColor[2] += (targetColor[2] - currentColor[2]) * 0.05;
+        
+        const r = Math.round(currentColor[0]);
+        const g = Math.round(currentColor[1]);
+        const b = Math.round(currentColor[2]);
+
+        particles.forEach(p => {
+            p.update();
+            p.draw(r, g, b);
+        });
+
+        // Dynamic Text Color update
+        if(isHolding) {
+             statusDiv.style.color = `rgb(${r}, ${g}, ${b})`;
+             if (Math.abs(particles[0].vx) < 0.1) statusDiv.innerText = "Focus";
+        }
+
+        requestAnimationFrame(loop);
+    }
+
+    loop();
+
+</script>
+
 </body>
 </html>
