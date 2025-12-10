@@ -2,26 +2,290 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tide Watcher</title> <style>
-        /* Shared variables so Dark Mode works via the Nav logic later */
-        :root { --bg-color: #f0f4f8; --text-main: #333; }
-        [data-theme="dark"] { --bg-color: #1a1a1a; --text-main: #f0f0f0; }
-        
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mandala Focus</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --container-bg: white;
+            --text-main: #333;
+            --text-sub: #555;
+            --text-muted: #888;
+            --shadow: rgba(0,0,0,0.1);
+            --toggle-border: #ddd;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --container-bg: #2d2d2d;
+            --text-main: #f0f0f0;
+            --text-sub: #ccc;
+            --text-muted: #aaa;
+            --shadow: rgba(0,0,0,0.3);
+            --toggle-border: #555;
+        }
+
         body {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
             margin: 0;
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
         }
+
+        .widget-container {
+            position: relative;
+            background: var(--container-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px var(--shadow);
+            text-align: center;
+            width: 95%;
+            max-width: 480px;
+            max-height: calc(100dvh - 80px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .app-title {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--text-main);
+            text-transform: uppercase;
+        }
+
+        .theme-switch {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: 1px solid var(--toggle-border);
+            color: var(--text-muted);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            width: auto;
+            max-height: 45vh; /* Allow generous height for the circle */
+            max-width: 100%;
+            object-fit: contain;
+            flex-shrink: 1;
+        }
+
+        .status-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            margin: 5px 0;
+            min-height: 2rem;
+        }
+
+        .controls {
+            border-top: 1px solid var(--text-muted);
+            padding-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 90%;
+            margin: 0 auto;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            min-width: 70px;
+            text-align: left;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--text-main);
+        }
+
     </style>
 </head>
 <body>
-    <h1>Work in Progress...</h1>
-    <script src="nav.js"></script>
+
+<div class="widget-container">
+    <button class="theme-switch" onclick="toggleTheme()">Dark Mode</button>
+    
+    <h1 class="app-title">Mandala Focus</h1>
+
+    <div class="status-text" id="statusText">Expand...</div>
+
+    <canvas id="mandalaCanvas" width="400" height="400"></canvas>
+    
+    <div class="controls">
+        <div class="control-row">
+            <label>Speed</label>
+            <input type="range" id="speedSlider" min="0.5" max="3" step="0.1" value="1.5">
+        </div>
+        <div class="control-row">
+            <label>Layers</label>
+            <input type="range" id="complexitySlider" min="6" max="24" step="2" value="12">
+        </div>
+    </div>
+</div>
+
+<script src="nav.js"></script>
+<script>
+    const canvas = document.getElementById('mandalaCanvas');
+    const ctx = canvas.getContext('2d');
+    const statusDiv = document.getElementById('statusText');
+    const speedSlider = document.getElementById('speedSlider');
+    const complexitySlider = document.getElementById('complexitySlider');
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+
+    let time = 0;
+    
+    // Config
+    let petalCount = 12;
+    let breathSpeed = 1.5;
+
+    function toggleTheme() {
+        const body = document.body;
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        body.setAttribute('data-theme', newTheme);
+    }
+
+    function drawPetal(x, y, width, height, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        // Bezier curve for a petal shape (teardrop)
+        ctx.bezierCurveTo(x + width / 2, y - height / 2, x + width, y + height / 2, x, y + height);
+        ctx.bezierCurveTo(x - width, y + height / 2, x - width / 2, y - height / 2, x, y);
+        ctx.fill();
+    }
+
+    function draw() {
+        // Clear
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Update Inputs
+        breathSpeed = parseFloat(speedSlider.value);
+        petalCount = parseInt(complexitySlider.value);
+
+        // Advance Time
+        // The speed slider controls how fast the sine wave moves
+        time += 0.01 * breathSpeed;
+
+        // Calculate Breath Cycle (0 to 1)
+        const sine = Math.sin(time); // -1 to 1
+        const breath = (sine + 1) / 2; // 0 to 1
+        
+        // --- VISUALS ---
+        
+        // 1. Determine Colors based on Theme & Phase
+        const isDark = document.body.getAttribute('data-theme') === 'dark';
+        
+        // HSL Color Shift based on breath
+        // Light mode: Blue/Teal/Purple
+        // Dark mode: Cyan/Magenta/Purple
+        const hueBase = isDark ? 280 : 200; 
+        const hueShift = sine * 40; // Shift hue by +/- 40 degrees
+        const hue = hueBase + hueShift;
+        
+        const lightness = isDark ? 60 : 50;
+        const colorMain = `hsla(${hue}, 70%, ${lightness}%, 0.6)`;
+        const colorInner = `hsla(${hue + 30}, 70%, ${lightness + 10}%, 0.8)`;
+
+        // 2. Global Rotation (Slow constant spin)
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(time * 0.2); // Constant slow rotation
+        
+        // 3. Draw Outer Layer (Expands Outward)
+        // Expansion logic: base radius + breath variance
+        const outerRadius = 40 + (breath * 60); 
+        
+        for (let i = 0; i < petalCount; i++) {
+            ctx.save();
+            // Rotate to position for this petal
+            ctx.rotate((Math.PI * 2 / petalCount) * i);
+            // Move out to radius
+            ctx.translate(0, outerRadius);
+            // Rotate the petal itself slightly based on breath (blooming effect)
+            ctx.rotate(sine * 0.5); 
+            
+            drawPetal(0, 0, 40, 80, colorMain);
+            ctx.restore();
+        }
+
+        // 4. Draw Inner Layer (Offsets slightly)
+        const innerRadius = 10 + (breath * 30);
+        
+        // Rotate the inner ring slightly offset from outer
+        ctx.rotate(Math.PI / petalCount); 
+
+        for (let i = 0; i < petalCount; i++) {
+            ctx.save();
+            ctx.rotate((Math.PI * 2 / petalCount) * i);
+            ctx.translate(0, innerRadius);
+            // Inner petals scale up/down with breath
+            const scale = 0.5 + (breath * 0.3);
+            ctx.scale(scale, scale);
+            
+            drawPetal(0, 0, 30, 60, colorInner);
+            ctx.restore();
+        }
+
+        // 5. Center Core
+        ctx.beginPath();
+        ctx.arc(0, 0, 15 + (breath * 5), 0, Math.PI * 2);
+        ctx.fillStyle = colorInner;
+        ctx.fill();
+
+        ctx.restore(); // Undo global translation
+
+        // --- TEXT LOGIC ---
+        // Cosine determines rate of change (Velocity)
+        const velocity = Math.cos(time);
+        
+        if (velocity > 0.2) {
+            statusDiv.innerText = "Expand (Inhale)";
+        } else if (velocity < -0.2) {
+            statusDiv.innerText = "Contract (Exhale)";
+        } else {
+            statusDiv.innerText = "Center...";
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    draw();
+
+</script>
+
 </body>
 </html>
