@@ -1,3 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Midnight Sleep</title>
+    <style>
+        /* Force Black Background immediately */
+        html, body {
+            background-color: #000000 !important;
+            margin: 0;
+            padding: 0;
+            height: 100dvh;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #600; /* Dark Red Text */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        .widget-container {
+            position: relative;
+            background: #050000; /* Almost pitch black */
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(50, 0, 0, 0.2);
+            text-align: center;
+            width: 95%;
+            max-width: 480px;
+            max-height: calc(100dvh - 80px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .app-title {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #600;
+            text-transform: uppercase;
+            opacity: 0.5;
+        }
+
+        /* Hide the theme toggle for this specific page */
+        .theme-switch { display: none !important; }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            width: auto;
+            max-height: 45vh;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        .status-text {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #600;
+            margin: 10px 0;
+            min-height: 2rem;
+            transition: color 1s ease;
+        }
+
+        .sub-text {
+            font-size: 0.9rem;
+            color: #500;
+            opacity: 0.6;
+            margin-bottom: 15px;
+        }
+        
+        .controls {
+            border-top: 1px solid #200;
+            padding-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 80%;
+            margin: 0 auto;
+        }
+
+        button.start-btn {
+            background-color: #200;
+            color: #800;
+            border: 1px solid #400;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button.start-btn:hover {
+            background-color: #300;
+            color: #f00;
+            border-color: #600;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="widget-container">
+    <h1 class="app-title">Midnight Sleep</h1>
+
+    <div class="status-text" id="statusText">Tap Start</div>
+    
+    <canvas id="sleepCanvas" width="400" height="400"></canvas>
+    
+    <div class="sub-text">Red light preserves melatonin</div>
+
+    <div class="controls">
+        <button class="start-btn" id="toggleBtn" onclick="toggleSleep()">Start 4-7-8 Cycle</button>
+    </div>
+</div>
+
+<script src="nav.js"></script>
 <script>
     const canvas = document.getElementById('sleepCanvas');
     const ctx = canvas.getContext('2d');
@@ -30,6 +154,7 @@
         startTime = performance.now();
         toggleBtn.innerText = "Stop";
         toggleBtn.style.borderColor = "#800";
+        toggleBtn.style.color = "#f00";
         loop();
     }
 
@@ -37,7 +162,8 @@
         isRunning = false;
         cancelAnimationFrame(animationFrameId);
         toggleBtn.innerText = "Start 4-7-8 Cycle";
-        toggleBtn.style.borderColor = "#500";
+        toggleBtn.style.borderColor = "#400";
+        toggleBtn.style.color = "#800";
         statusDiv.innerText = "Tap Start";
         statusDiv.style.color = "#600";
         drawIdle();
@@ -46,12 +172,18 @@
     function drawIdle() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Idle State: Just a faint ring
+        // Idle State: Visible dim red ring
         ctx.beginPath();
         ctx.arc(centerX, centerY, 50, 0, Math.PI * 2);
-        ctx.strokeStyle = "#300"; // Visible dim red ring
+        ctx.strokeStyle = "#400"; 
         ctx.lineWidth = 2;
         ctx.stroke();
+
+        // Small center dot to show it's active
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 5, 0, Math.PI * 2);
+        ctx.fillStyle = "#300";
+        ctx.fill();
     }
 
     function loop(currentTime) {
@@ -85,24 +217,24 @@
             // Grow from size 50 to 120
             size = 50 + (progress * 70);
             opacity = 0.3 + (progress * 0.7); // Get brighter
-            statusDiv.style.color = "#d00";
+            statusDiv.style.color = "#d00"; // Bright Red
 
         } else if (activePhase.name === 'hold') {
             size = 120;
             opacity = 1.0;
             // Subtle pulse
             size += Math.sin(timeInPhase * 0.005) * 3;
-            statusDiv.style.color = "#900";
+            statusDiv.style.color = "#900"; // Medium Red
 
         } else if (activePhase.name === 'exhale') {
             const progress = timeInPhase / 8000;
             // Shrink from 120 back to 50
             size = 120 - (progress * 70);
             opacity = 1.0 - (progress * 0.7); // Get dimmer
-            statusDiv.style.color = "#500";
+            statusDiv.style.color = "#500"; // Dim Red
         }
 
-        // 1. Draw Solid Core (So it is always visible)
+        // 1. Draw Solid Core (The physical "dot" that grows)
         ctx.beginPath();
         ctx.arc(centerX, centerY, size * 0.6, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(100, 0, 0, ${opacity})`; 
@@ -111,9 +243,8 @@
         // 2. Draw Soft Halo (The glow)
         ctx.beginPath();
         ctx.arc(centerX, centerY, size, 0, Math.PI * 2);
-        // Gradient from bright red to transparent
-        const gradient = ctx.createRadialGradient(centerX, centerY, size * 0.2, centerX, centerY, size);
-        gradient.addColorStop(0, `rgba(255, 50, 50, ${opacity * 0.5})`); 
+        const gradient = ctx.createRadialGradient(centerX, centerY, size * 0.3, centerX, centerY, size);
+        gradient.addColorStop(0, `rgba(255, 50, 50, ${opacity * 0.4})`); 
         gradient.addColorStop(1, `rgba(0, 0, 0, 0)`);
         
         ctx.fillStyle = gradient;
@@ -124,5 +255,10 @@
         animationFrameId = requestAnimationFrame(loop);
     }
 
+    // Initialize
     drawIdle();
+
 </script>
+
+</body>
+</html>
