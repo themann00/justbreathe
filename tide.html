@@ -136,7 +136,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 15px;
             min-height: 2rem;
             margin: 5px 0;
         }
@@ -147,15 +147,17 @@
             color: var(--text-sub);
         }
 
-        .toggle-text-btn {
+        .icon-btn {
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 1.2rem;
             opacity: 0.5;
             padding: 5px;
+            transition: opacity 0.2s, transform 0.2s;
         }
-        .toggle-text-btn:hover { opacity: 1; }
+        .icon-btn:hover { opacity: 1; transform: scale(1.1); }
+        .icon-btn.active { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 5px var(--color-hold)); }
         
         .controls {
             border-top: 1px solid var(--text-muted);
@@ -210,8 +212,11 @@
     </div>
 
     <div class="status-container">
+        <button class="icon-btn" id="soundBtn" onclick="toggleSound()" title="Ocean Sounds">🔊</button>
+        
         <div class="status-text" id="statusText">Breathe In...</div>
-        <button class="toggle-text-btn" onclick="toggleTextVis()" title="Toggle Instructions">👁️</button>
+        
+        <button class="icon-btn" onclick="toggleTextVis()" title="Toggle Instructions">👁️</button>
     </div>
 
     <canvas id="tideCanvas" width="350" height="350"></canvas>
@@ -241,6 +246,7 @@
     const canvas = document.getElementById('tideCanvas');
     const ctx = canvas.getContext('2d');
     const statusDiv = document.getElementById('statusText');
+    const soundBtn = document.getElementById('soundBtn');
     
     // Inputs
     const sIn = document.getElementById('slideIn');
@@ -265,9 +271,93 @@
     let phases = [];
     let totalCycleTime = 0;
     let startTime = performance.now();
-    
-    // Current Border Color State
     let currentPhaseColor = '#ddd';
+    let currentWaterLevel = 0.5; // For audio mapping
+
+    // --- AUDIO ENGINE ---
+    let audioCtx = null;
+    let gainNode = null;
+    let isSoundOn = false;
+
+    function initAudio() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+
+            // Create Pink Noise (Sounds like ocean)
+            const bufferSize = 2 * audioCtx.sampleRate; // 2 seconds buffer
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+
+            // Pink noise algorithm
+            let b0, b1, b2, b3, b4, b5, b6;
+            b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                b0 = 0.99886 * b0 + white * 0.0555179;
+                b1 = 0.99332 * b1 + white * 0.0750759;
+                b2 = 0.96900 * b2 + white * 0.1538520;
+                b3 = 0.86650 * b3 + white * 0.3104856;
+                b4 = 0.55000 * b4 + white * 0.5329522;
+                b5 = -0.7616 * b5 - white * 0.0168980;
+                output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+                output[i] *= 0.11; // Lower base volume
+                b6 = white * 0.115926;
+            }
+
+            const noiseSource = audioCtx.createBufferSource();
+            noiseSource.buffer = noiseBuffer;
+            noiseSource.loop = true;
+
+            // Low Pass Filter (Muffles it like being underwater/waves)
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 400;
+
+            // Gain Node (Volume Control)
+            gainNode = audioCtx.createGain();
+            gainNode.gain.value = 0.01; // Start nearly silent
+
+            // Connections
+            noiseSource.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            noiseSource.start(0);
+        }
+    }
+
+    function toggleSound() {
+        initAudio();
+        // Browser suspend check
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        isSoundOn = !isSoundOn;
+        if(isSoundOn) {
+            soundBtn.classList.add('active');
+            soundBtn.innerHTML = "🔊"; // Sound On
+        } else {
+            soundBtn.classList.remove('active');
+            soundBtn.innerHTML = "🔇"; // Sound Off
+            if(gainNode) gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+        }
+    }
+
+    function modulateSound(level) {
+        if(!isSoundOn || !gainNode || !audioCtx) return;
+        
+        // Map water level (0 to 1) to Volume (0.05 to 0.3)
+        // High tide = Loud, Low tide = Quiet
+        const targetVol = 0.05 + (level * 0.25);
+        
+        // Smooth transition to avoid clicking
+        gainNode.gain.setTargetAtTime(targetVol, audioCtx.currentTime, 0.2);
+    }
+
+
+    // --- VISUALS ---
 
     function toggleTheme() {
         const body = document.body;
@@ -282,7 +372,6 @@
     }
 
     function setPreset(type, btn) {
-        // Update Buttons UI
         document.querySelectorAll('.tech-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
 
@@ -297,27 +386,22 @@
     }
 
     function updateTimings() {
-        // Update Labels
         lIn.innerText = sIn.value + "s";
         lHold.innerText = sHold.value + "s";
         lOut.innerText = sOut.value + "s";
         lRest.innerText = sRest.value + "s";
 
-        // Rebuild Phase Array
         phases = [
             { type: 'inhale', duration: parseInt(sIn.value) * 1000, label: "Tide Coming In" },
             { type: 'hold', duration: parseInt(sHold.value) * 1000, label: "Hold High Tide" },
             { type: 'exhale', duration: parseInt(sOut.value) * 1000, label: "Tide Going Out" },
             { type: 'rest', duration: parseInt(sRest.value) * 1000, label: "Low Tide Rest" }
-        ].filter(p => p.duration > 0); // Remove 0 duration phases
+        ].filter(p => p.duration > 0);
 
         totalCycleTime = phases.reduce((acc, p) => acc + p.duration, 0);
-        
-        // Reset cycle slightly so it doesn't jump
         startTime = performance.now();
     }
 
-    // Initialize
     updateTimings();
 
     function getStyles() {
@@ -341,7 +425,7 @@
         const elapsed = (currentTime - startTime) % totalCycleTime;
         let timeAccumulator = 0;
         let activePhase = phases[0];
-        let phaseProgress = 0; // 0.0 to 1.0 within the phase
+        let phaseProgress = 0; 
 
         for (let p of phases) {
             if (elapsed < timeAccumulator + p.duration) {
@@ -353,7 +437,6 @@
             timeAccumulator += p.duration;
         }
 
-        // 2. Set Status Text & Color
         if (textVisible) statusDiv.innerText = activePhase.label;
         
         switch(activePhase.type) {
@@ -364,44 +447,40 @@
             default: currentPhaseColor = styles.defaultBorder;
         }
 
-        // 3. Calculate Water Level (0.0 = Bottom, 1.0 = Top)
-        // We map phases to water height
+        // 2. Calculate Water Level & Audio Vol
         let waterLevel = 0; 
 
         if (activePhase.type === 'inhale') {
-            // Sine Ease In-Out: 0 -> 1
             waterLevel = (Math.sin((phaseProgress * Math.PI) - (Math.PI/2)) + 1) / 2;
         } 
         else if (activePhase.type === 'hold') {
-            waterLevel = 1; // Full
+            waterLevel = 1; 
         } 
         else if (activePhase.type === 'exhale') {
-            // Sine Ease In-Out: 1 -> 0
             waterLevel = 1 - ((Math.sin((phaseProgress * Math.PI) - (Math.PI/2)) + 1) / 2);
         } 
         else if (activePhase.type === 'rest') {
-            waterLevel = 0; // Empty
+            waterLevel = 0; 
         }
 
-        // Map 0-1 to pixel Y coordinates
-        // High tide (1.0) = centerY - 120
-        // Low tide (0.0) = centerY + 120
+        // Send logic to Audio Engine
+        modulateSound(waterLevel);
+
         const waterY = (centerY + 120) - (waterLevel * 240);
 
-        // 4. Draw Porthole Border (Dynamic Color)
+        // 3. Draw Porthole Border
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius + 5, 0, Math.PI * 2);
         ctx.strokeStyle = currentPhaseColor;
         ctx.lineWidth = 10;
         ctx.stroke();
 
-        // 5. Draw Water (Clipped)
+        // 4. Draw Water (Clipped)
         ctx.save();
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         ctx.clip();
 
-        // Wave Animation
         const timeSec = currentTime / 1000;
         
         function drawWave(offset, amp, freq, speed, color) {
