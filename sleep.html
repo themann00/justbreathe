@@ -105,7 +105,8 @@
 
     </style>
 </head>
-<body>
+
+<body data-theme="dark">
 
 <div class="widget-container">
     <h1 class="app-title">Midnight Sleep</h1>
@@ -193,7 +194,7 @@
         const elapsedTime = (currentTime - startTime) % totalCycleDuration;
         
         let timeAccumulator = 0;
-        let activePhase = null;
+        let activePhase = phases[0]; // Default to first phase to prevent vanish
         let timeInPhase = 0;
 
         for (let phase of phases) {
@@ -233,6 +234,10 @@
             opacity = 1.0 - (progress * 0.7); // Get dimmer
             statusDiv.style.color = "#500"; // Dim Red
         }
+
+        // Safety check for NaN values
+        if (size < 0) size = 1;
+        if (opacity < 0) opacity = 0;
 
         // 1. Draw Solid Core (The physical "dot" that grows)
         ctx.beginPath();
