@@ -13,7 +13,6 @@
             --text-muted: #888;
             --shadow: rgba(0,0,0,0.1);
             --toggle-border: #ddd;
-            --mantra-color: #4a90e2; /* Soft Blue */
             
             /* Phase Colors */
             --color-inhale: #77dd77;
@@ -30,7 +29,6 @@
             --text-muted: #aaa;
             --shadow: rgba(0,0,0,0.3);
             --toggle-border: #555;
-            --mantra-color: #89CFF0; /* Lighter Blue */
         }
 
         body {
@@ -237,7 +235,6 @@
 
 <div class="widget-container">
     
-    
     <h1 class="app-title">Visual Mantra</h1>
 
     <div class="tech-buttons">
@@ -382,8 +379,20 @@
         return size;
     }
 
+    function getStyles() {
+        const s = getComputedStyle(document.body);
+        return {
+            inhale: s.getPropertyValue('--color-inhale').trim(),
+            hold: s.getPropertyValue('--color-hold').trim(),
+            exhale: s.getPropertyValue('--color-exhale').trim(),
+            rest: s.getPropertyValue('--color-rest').trim(),
+            default: s.getPropertyValue('--text-main').trim()
+        };
+    }
+
     function draw(currentTime) {
         ctx.clearRect(0, 0, width, height);
+        const styles = getStyles();
 
         // 1. Determine Phase
         const elapsed = (currentTime - startTime) % totalCycleTime;
@@ -405,28 +414,30 @@
 
         // 2. Calculate Opacity based on Phase
         let opacity = 0;
+        let currentColor = styles.default;
 
         if (activePhase.type === 'inhale') {
             // Fade In (0 -> 1)
             opacity = (Math.sin((phaseProgress * Math.PI) - (Math.PI/2)) + 1) / 2;
+            currentColor = styles.inhale;
         } 
         else if (activePhase.type === 'hold') {
             // Stay Visible
             opacity = 1; 
+            currentColor = styles.hold;
         } 
         else if (activePhase.type === 'exhale') {
             // Fade Out (1 -> 0)
             opacity = 1 - ((Math.sin((phaseProgress * Math.PI) - (Math.PI/2)) + 1) / 2);
+            currentColor = styles.exhale;
         } 
         else if (activePhase.type === 'rest') {
             // Stay Invisible
             opacity = 0; 
+            currentColor = styles.rest;
         }
 
         // --- VISUALS ---
-        
-        const style = getComputedStyle(document.body);
-        const baseColor = style.getPropertyValue('--mantra-color').trim(); 
         
         ctx.save();
         ctx.globalAlpha = Math.max(0.02, opacity); // Min opacity so it doesn't flicker
@@ -436,11 +447,11 @@
         ctx.font = `bold ${fontSize}px "Segoe UI", sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillStyle = baseColor;
+        ctx.fillStyle = currentColor;
 
         // Glow Effect
         if (opacity > 0.8) {
-            ctx.shadowColor = baseColor;
+            ctx.shadowColor = currentColor;
             ctx.shadowBlur = (opacity - 0.8) * 100; 
         }
 
