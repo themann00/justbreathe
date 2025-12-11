@@ -6,6 +6,7 @@
     <title>Tide Watcher</title>
     <style>
         :root {
+            /* Standard Light Theme */
             --bg-color: #f0f4f8;
             --container-bg: white;
             --text-main: #333;
@@ -13,10 +14,12 @@
             --text-muted: #888;
             --shadow: rgba(0,0,0,0.1);
             --toggle-border: #ddd;
-            /* Ocean Colors */
+            
+            /* Ocean Colors (Blue/Teal) */
             --wave-front: rgba(0, 119, 190, 0.8);
             --wave-back: rgba(0, 119, 190, 0.4);
-            /* Phase Colors */
+            
+            /* Phase Colors (Multi-colored) */
             --color-inhale: #77dd77;
             --color-hold: #89CFF0;
             --color-exhale: #b39eb5;
@@ -24,6 +27,7 @@
             --porthole-border: #ddd;
         }
 
+        /* Standard Dark Theme */
         [data-theme="dark"] {
             --bg-color: #1a1a1a;
             --container-bg: #2d2d2d;
@@ -37,11 +41,33 @@
             --porthole-border: #444;
         }
 
+        /* --- SLEEP MODE (Overrides Everything with Red) --- */
+        body.sleep-mode {
+            --bg-color: #000000 !important;
+            --container-bg: #0a0000 !important;
+            --text-main: #a00 !important;
+            --text-sub: #800 !important;
+            --text-muted: #500 !important;
+            --shadow: rgba(50, 0, 0, 0.3) !important;
+            --toggle-border: #400 !important;
+            
+            /* Red Water */
+            --wave-front: rgba(150, 0, 0, 0.8) !important;
+            --wave-back: rgba(80, 0, 0, 0.4) !important;
+            
+            /* Monochromatic Red Phases */
+            --color-inhale: #f00 !important;   /* Bright Red */
+            --color-hold: #c00 !important;     /* Deep Red */
+            --color-exhale: #900 !important;   /* Dim Red */
+            --color-rest: #500 !important;     /* Faint Red */
+            --porthole-border: #300 !important;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.5s ease, color 0.5s ease;
             margin: 0;
             height: 100dvh;
             overflow: hidden;
@@ -66,7 +92,7 @@
             justify-content: space-evenly;
             padding: 20px;
             box-sizing: border-box;
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            transition: background-color 0.5s ease, box-shadow 0.5s ease;
         }
 
         .app-title {
@@ -78,7 +104,7 @@
             text-transform: uppercase;
         }
 
-        /* Toggle Switch */
+        /* Top Right: Dark Mode */
         .theme-switch {
             position: absolute;
             top: 15px;
@@ -91,6 +117,29 @@
             font-size: 0.65rem;
             cursor: pointer;
             z-index: 10;
+        }
+
+        /* Top Left: Sleep Mode */
+        .sleep-switch {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: transparent;
+            border: 1px solid var(--toggle-border);
+            color: var(--text-muted);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        /* Active state for sleep button */
+        body.sleep-mode .sleep-switch {
+            border-color: #f00;
+            color: #f00;
+            font-weight: bold;
+            background: rgba(50,0,0,0.5);
         }
 
         /* Tech Buttons */
@@ -201,6 +250,8 @@
 <body>
 
 <div class="widget-container">
+    <button class="sleep-switch" onclick="toggleSleepMode()">Sleep Mode</button>
+    
     <button class="theme-switch" onclick="toggleTheme()">Dark Mode</button>
     
     <h1 class="app-title">Tide Watcher</h1>
@@ -360,10 +411,17 @@
     // --- VISUALS ---
 
     function toggleTheme() {
+        // Disable Sleep mode if we switch standard themes
+        document.body.classList.remove('sleep-mode');
+        
         const body = document.body;
         const currentTheme = body.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         body.setAttribute('data-theme', newTheme);
+    }
+
+    function toggleSleepMode() {
+        document.body.classList.toggle('sleep-mode');
     }
 
     function toggleTextVis() {
