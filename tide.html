@@ -41,26 +41,26 @@
             --porthole-border: #444;
         }
 
-        /* --- SLEEP MODE (Overrides Everything with Red) --- */
+        /* --- SLEEP MODE (Overrides Everything with MUTED REDS) --- */
         body.sleep-mode {
             --bg-color: #000000 !important;
-            --container-bg: #0a0000 !important;
-            --text-main: #a00 !important;
-            --text-sub: #800 !important;
-            --text-muted: #500 !important;
-            --shadow: rgba(50, 0, 0, 0.3) !important;
-            --toggle-border: #400 !important;
+            --container-bg: #050000 !important; /* Pitch black with hint of red */
+            --text-main: #700 !important; /* Muted Dark Red */
+            --text-sub: #600 !important;
+            --text-muted: #400 !important;
+            --shadow: rgba(0, 0, 0, 1) !important;
+            --toggle-border: #300 !important;
             
-            /* Red Water */
-            --wave-front: rgba(150, 0, 0, 0.8) !important;
-            --wave-back: rgba(80, 0, 0, 0.4) !important;
+            /* Dark Crimson Water */
+            --wave-front: rgba(80, 0, 0, 0.9) !important;
+            --wave-back: rgba(40, 0, 0, 0.5) !important;
             
-            /* Monochromatic Red Phases */
-            --color-inhale: #f00 !important;   /* Bright Red */
-            --color-hold: #c00 !important;     /* Deep Red */
-            --color-exhale: #900 !important;   /* Dim Red */
-            --color-rest: #500 !important;     /* Faint Red */
-            --porthole-border: #300 !important;
+            /* Monochromatic Red Phases (Dim to slightly less dim) */
+            --color-inhale: #900 !important;   /* Visible Red */
+            --color-hold: #700 !important;     /* Muted Red */
+            --color-exhale: #500 !important;   /* Dim Red */
+            --color-rest: #300 !important;     /* Very Dim Red */
+            --porthole-border: #200 !important;
         }
 
         body {
@@ -136,10 +136,10 @@
         
         /* Active state for sleep button */
         body.sleep-mode .sleep-switch {
-            border-color: #f00;
-            color: #f00;
+            border-color: #600;
+            color: #800;
             font-weight: bold;
-            background: rgba(50,0,0,0.5);
+            background: rgba(50,0,0,0.2);
         }
 
         /* Tech Buttons */
@@ -422,6 +422,12 @@
 
     function toggleSleepMode() {
         document.body.classList.toggle('sleep-mode');
+        
+        // FORCE DARK MODE for Nav Bar
+        const isSleep = document.body.classList.contains('sleep-mode');
+        if (isSleep) {
+            document.body.setAttribute('data-theme', 'dark');
+        }
     }
 
     function toggleTextVis() {
