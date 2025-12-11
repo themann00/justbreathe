@@ -16,6 +16,11 @@
             /* Ocean Colors */
             --wave-front: rgba(0, 119, 190, 0.8);
             --wave-back: rgba(0, 119, 190, 0.4);
+            /* Phase Colors */
+            --color-inhale: #77dd77;
+            --color-hold: #89CFF0;
+            --color-exhale: #b39eb5;
+            --color-rest: #FFB347;
             --porthole-border: #ddd;
         }
 
@@ -27,7 +32,7 @@
             --text-muted: #aaa;
             --shadow: rgba(0,0,0,0.3);
             --toggle-border: #555;
-            --wave-front: rgba(72, 209, 204, 0.7); /* Teal glow */
+            --wave-front: rgba(72, 209, 204, 0.7);
             --wave-back: rgba(72, 209, 204, 0.3);
             --porthole-border: #444;
         }
@@ -65,7 +70,7 @@
         }
 
         .app-title {
-            margin: 0;
+            margin: 0 0 10px 0;
             font-size: 1.4rem;
             font-weight: 800;
             letter-spacing: 1px;
@@ -88,57 +93,106 @@
             z-index: 10;
         }
 
+        /* Tech Buttons */
+        .tech-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .tech-btn {
+            flex: 1;
+            padding: 8px 5px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            opacity: 0.6;
+            transform: scale(0.98);
+            transition: all 0.2s;
+        }
+
+        .tech-btn:hover { opacity: 0.8; }
+        .tech-btn.active { opacity: 1; transform: scale(1.02); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+
+        .btn-478 { background-color: var(--color-inhale); } 
+        .btn-box { background-color: var(--color-rest); } 
+        .btn-333 { background-color: var(--color-exhale); } 
+
+
         canvas {
             display: block;
-            margin: 15px auto;
+            margin: 5px auto;
             width: auto;
-            max-height: 40vh; /* Responsive sizing */
+            max-height: 35vh; 
             max-width: 100%;
             object-fit: contain;
             flex-shrink: 1;
         }
 
+        .status-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 2rem;
+            margin: 5px 0;
+        }
+
         .status-text {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 600;
             color: var(--text-sub);
-            margin: 5px 0;
-            min-height: 2rem;
         }
+
+        .toggle-text-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            opacity: 0.5;
+            padding: 5px;
+        }
+        .toggle-text-btn:hover { opacity: 1; }
         
         .controls {
             border-top: 1px solid var(--text-muted);
-            padding-top: 15px;
-            display: flex;
-            flex-direction: column;
+            padding-top: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2 columns */
             gap: 10px;
-            width: 80%;
+            width: 90%;
             margin: 0 auto;
         }
 
         .slider-group {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 2px;
+            text-align: left;
         }
 
         label {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
             font-weight: 600;
+            display: flex;
+            justify-content: space-between;
         }
 
         input[type=range] {
             width: 100%;
             cursor: pointer;
-            accent-color: var(--text-main);
+            height: 4px;
         }
 
-        .speed-readout {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-top: -5px;
-        }
+        /* Color-code the sliders */
+        #slideIn { accent-color: var(--color-inhale); }
+        #slideHold { accent-color: var(--color-hold); }
+        #slideOut { accent-color: var(--color-exhale); }
+        #slideRest { accent-color: var(--color-rest); }
 
     </style>
 </head>
@@ -149,15 +203,35 @@
     
     <h1 class="app-title">Tide Watcher</h1>
 
-    <div class="status-text" id="statusText">Breathe In...</div>
+    <div class="tech-buttons">
+        <button class="tech-btn btn-478 active" onclick="setPreset('478', this)">4-7-8 Relax</button>
+        <button class="tech-btn btn-box" onclick="setPreset('box', this)">Box Focus</button>
+        <button class="tech-btn btn-333" onclick="setPreset('333', this)">3-3-3 Calm</button>
+    </div>
+
+    <div class="status-container">
+        <div class="status-text" id="statusText">Breathe In...</div>
+        <button class="toggle-text-btn" onclick="toggleTextVis()" title="Toggle Instructions">👁️</button>
+    </div>
 
     <canvas id="tideCanvas" width="350" height="350"></canvas>
     
     <div class="controls">
         <div class="slider-group">
-            <label for="speedSlider">Ocean Rhythm</label>
-            <input type="range" id="speedSlider" min="3" max="10" step="0.5" value="5" oninput="updateSpeed()">
-            <div class="speed-readout" id="speedReadout">5 seconds per breath</div>
+            <label>Inhale: <span id="valIn">4s</span></label>
+            <input type="range" id="slideIn" min="1" max="10" step="1" value="4" oninput="updateTimings()">
+        </div>
+        <div class="slider-group">
+            <label>Hold: <span id="valHold">7s</span></label>
+            <input type="range" id="slideHold" min="0" max="10" step="1" value="7" oninput="updateTimings()">
+        </div>
+        <div class="slider-group">
+            <label>Exhale: <span id="valOut">8s</span></label>
+            <input type="range" id="slideOut" min="1" max="10" step="1" value="8" oninput="updateTimings()">
+        </div>
+        <div class="slider-group">
+            <label>Rest: <span id="valRest">0s</span></label>
+            <input type="range" id="slideRest" min="0" max="10" step="1" value="0" oninput="updateTimings()">
         </div>
     </div>
 </div>
@@ -167,24 +241,33 @@
     const canvas = document.getElementById('tideCanvas');
     const ctx = canvas.getContext('2d');
     const statusDiv = document.getElementById('statusText');
-    const slider = document.getElementById('speedSlider');
-    const readout = document.getElementById('speedReadout');
+    
+    // Inputs
+    const sIn = document.getElementById('slideIn');
+    const sHold = document.getElementById('slideHold');
+    const sOut = document.getElementById('slideOut');
+    const sRest = document.getElementById('slideRest');
+    
+    // Labels
+    const lIn = document.getElementById('valIn');
+    const lHold = document.getElementById('valHold');
+    const lOut = document.getElementById('valOut');
+    const lRest = document.getElementById('valRest');
 
-    // Configuration
-    const width = canvas.width;
-    const height = canvas.height;
+    const width = 350;
+    const height = 350;
     const centerX = width / 2;
     const centerY = height / 2;
-    const radius = 160; // Size of the porthole
+    const radius = 160;
 
-    // Wave Physics
-    let time = 0;
-    let breathDuration = 5; // Seconds per full cycle (inhale + exhale)
-
-    function updateSpeed() {
-        breathDuration = parseFloat(slider.value);
-        readout.innerText = `${breathDuration} seconds per breath`;
-    }
+    // State
+    let textVisible = true;
+    let phases = [];
+    let totalCycleTime = 0;
+    let startTime = performance.now();
+    
+    // Current Border Color State
+    let currentPhaseColor = '#ddd';
 
     function toggleTheme() {
         const body = document.body;
@@ -193,100 +276,157 @@
         body.setAttribute('data-theme', newTheme);
     }
 
-    function draw() {
+    function toggleTextVis() {
+        textVisible = !textVisible;
+        statusDiv.style.opacity = textVisible ? "1" : "0";
+    }
+
+    function setPreset(type, btn) {
+        // Update Buttons UI
+        document.querySelectorAll('.tech-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (type === '478') {
+            sIn.value = 4; sHold.value = 7; sOut.value = 8; sRest.value = 0;
+        } else if (type === 'box') {
+            sIn.value = 4; sHold.value = 4; sOut.value = 4; sRest.value = 4;
+        } else if (type === '333') {
+            sIn.value = 3; sHold.value = 3; sOut.value = 3; sRest.value = 0;
+        }
+        updateTimings();
+    }
+
+    function updateTimings() {
+        // Update Labels
+        lIn.innerText = sIn.value + "s";
+        lHold.innerText = sHold.value + "s";
+        lOut.innerText = sOut.value + "s";
+        lRest.innerText = sRest.value + "s";
+
+        // Rebuild Phase Array
+        phases = [
+            { type: 'inhale', duration: parseInt(sIn.value) * 1000, label: "Tide Coming In" },
+            { type: 'hold', duration: parseInt(sHold.value) * 1000, label: "Hold High Tide" },
+            { type: 'exhale', duration: parseInt(sOut.value) * 1000, label: "Tide Going Out" },
+            { type: 'rest', duration: parseInt(sRest.value) * 1000, label: "Low Tide Rest" }
+        ].filter(p => p.duration > 0); // Remove 0 duration phases
+
+        totalCycleTime = phases.reduce((acc, p) => acc + p.duration, 0);
+        
+        // Reset cycle slightly so it doesn't jump
+        startTime = performance.now();
+    }
+
+    // Initialize
+    updateTimings();
+
+    function getStyles() {
+        const s = getComputedStyle(document.body);
+        return {
+            front: s.getPropertyValue('--wave-front').trim(),
+            back: s.getPropertyValue('--wave-back').trim(),
+            inhale: s.getPropertyValue('--color-inhale').trim(),
+            hold: s.getPropertyValue('--color-hold').trim(),
+            exhale: s.getPropertyValue('--color-exhale').trim(),
+            rest: s.getPropertyValue('--color-rest').trim(),
+            defaultBorder: s.getPropertyValue('--porthole-border').trim()
+        };
+    }
+
+    function draw(currentTime) {
         ctx.clearRect(0, 0, width, height);
+        const styles = getStyles();
 
-        // 1. Get Colors from CSS Variables
-        const styles = getComputedStyle(document.body);
-        const colorFront = styles.getPropertyValue('--wave-front').trim();
-        const colorBack = styles.getPropertyValue('--wave-back').trim();
-        const borderColor = styles.getPropertyValue('--porthole-border').trim();
+        // 1. Determine Current Phase
+        const elapsed = (currentTime - startTime) % totalCycleTime;
+        let timeAccumulator = 0;
+        let activePhase = phases[0];
+        let phaseProgress = 0; // 0.0 to 1.0 within the phase
 
-        // 2. Draw Porthole Border
+        for (let p of phases) {
+            if (elapsed < timeAccumulator + p.duration) {
+                activePhase = p;
+                const timeInPhase = elapsed - timeAccumulator;
+                phaseProgress = timeInPhase / p.duration;
+                break;
+            }
+            timeAccumulator += p.duration;
+        }
+
+        // 2. Set Status Text & Color
+        if (textVisible) statusDiv.innerText = activePhase.label;
+        
+        switch(activePhase.type) {
+            case 'inhale': currentPhaseColor = styles.inhale; break;
+            case 'hold': currentPhaseColor = styles.hold; break;
+            case 'exhale': currentPhaseColor = styles.exhale; break;
+            case 'rest': currentPhaseColor = styles.rest; break;
+            default: currentPhaseColor = styles.defaultBorder;
+        }
+
+        // 3. Calculate Water Level (0.0 = Bottom, 1.0 = Top)
+        // We map phases to water height
+        let waterLevel = 0; 
+
+        if (activePhase.type === 'inhale') {
+            // Sine Ease In-Out: 0 -> 1
+            waterLevel = (Math.sin((phaseProgress * Math.PI) - (Math.PI/2)) + 1) / 2;
+        } 
+        else if (activePhase.type === 'hold') {
+            waterLevel = 1; // Full
+        } 
+        else if (activePhase.type === 'exhale') {
+            // Sine Ease In-Out: 1 -> 0
+            waterLevel = 1 - ((Math.sin((phaseProgress * Math.PI) - (Math.PI/2)) + 1) / 2);
+        } 
+        else if (activePhase.type === 'rest') {
+            waterLevel = 0; // Empty
+        }
+
+        // Map 0-1 to pixel Y coordinates
+        // High tide (1.0) = centerY - 120
+        // Low tide (0.0) = centerY + 120
+        const waterY = (centerY + 120) - (waterLevel * 240);
+
+        // 4. Draw Porthole Border (Dynamic Color)
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius + 5, 0, Math.PI * 2);
-        ctx.strokeStyle = borderColor;
-        ctx.lineWidth = 8;
+        ctx.strokeStyle = currentPhaseColor;
+        ctx.lineWidth = 10;
         ctx.stroke();
 
-        // 3. Create Clipping Region (The circular glass)
-        ctx.save(); // Save state before clipping
+        // 5. Draw Water (Clipped)
+        ctx.save();
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        ctx.clip(); // Restrict drawing to inside the circle
+        ctx.clip();
 
-        // 4. Calculate Tide Level (Breathing Cycle)
-        // Convert time to a breath cycle (0 to 1 to 0)
-        // We use Math.sin based on breathDuration
-        // time is incremented by 1/60th of a second (roughly)
-        const cycleSpeed = (Math.PI * 2) / (breathDuration * 60);
-        time += cycleSpeed;
-
-        // Sine gives -1 to 1. We map it to the canvas height.
-        // -1 (Low tide/Bottom) to 1 (High tide/Top)
-        // We invert Y because 0 is top in Canvas.
-        const tideSine = Math.sin(time - Math.PI/2); 
+        // Wave Animation
+        const timeSec = currentTime / 1000;
         
-        // Map sine (-1 to 1) to vertical pixels
-        // High tide = centerY - 120 (Top of circleish)
-        // Low tide = centerY + 120 (Bottom of circleish)
-        const waterLevelY = centerY - (tideSine * 120);
-
-        // 5. Draw Waves
-        // Helper function to draw a sine wave shape
-        function drawWave(offset, amplitude, frequency, speed, color) {
+        function drawWave(offset, amp, freq, speed, color) {
             ctx.fillStyle = color;
             ctx.beginPath();
-            
-            // Move across the width of the canvas
             for (let x = 0; x <= width; x++) {
-                // Wave Equation: y = level + sin(x * freq + speed_offset) * amp
-                const y = waterLevelY + Math.sin(x * frequency + time * speed + offset) * amplitude;
-                
-                // First point needs moveTo, others lineTo
+                const y = waterY + Math.sin(x * freq + timeSec * speed + offset) * amp;
                 if (x === 0) ctx.moveTo(x, y);
                 else ctx.lineTo(x, y);
             }
-            
-            // Close the shape at the bottom corners so it fills
             ctx.lineTo(width, height);
             ctx.lineTo(0, height);
             ctx.closePath();
             ctx.fill();
         }
 
-        // Draw Back Wave (Slower, flatter)
-        drawWave(0, 15, 0.01, 2, colorBack);
-        
-        // Draw Front Wave (Faster, choppier)
-        drawWave(2, 20, 0.015, 3, colorFront);
+        drawWave(0, 10, 0.01, 2, styles.back);
+        drawWave(2, 15, 0.015, 3, styles.front);
 
-        // 6. Restore Context (remove clipping)
         ctx.restore();
-
-        // 7. Update Text Logic
-        // Derivative of sine is cosine. Positive cos = rising (inhale).
-        const isRising = Math.cos(time - Math.PI/2) > 0;
-        
-        // Smoothing the text transition logic
-        // If we are very close to the top or bottom, we are "Holding"
-        const threshold = 0.2; // Sensitivity for "turnaround" points
-        const phase = Math.cos(time - Math.PI/2);
-
-        if (phase > threshold) {
-            statusDiv.innerText = "Tide Coming In (Inhale)";
-        } else if (phase < -threshold) {
-            statusDiv.innerText = "Tide Going Out (Exhale)";
-        } else {
-            // At the peaks/troughs
-            statusDiv.innerText = "Hold...";
-        }
 
         requestAnimationFrame(draw);
     }
 
-    // Start Animation
-    draw();
+    requestAnimationFrame(draw);
 
 </script>
 
