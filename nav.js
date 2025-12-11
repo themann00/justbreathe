@@ -1,16 +1,41 @@
 document.addEventListener("DOMContentLoaded", function() {
-    // 1. Define the Navigation Links
+    
+    // --- 1. GOOGLE TAG MANAGER (GTM-KQS9RB98) ---
+    const GTM_ID = 'GTM-KQS9RB98';
+
+    // A. Inject the Script (Head)
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer', GTM_ID);
+
+    // B. Inject the NoScript Iframe (Body - for non-JS users)
+    const noscript = document.createElement('noscript');
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://www.googletagmanager.com/ns.html?id=${GTM_ID}`;
+    iframe.height = 0;
+    iframe.width = 0;
+    iframe.style.display = 'none';
+    iframe.style.visibility = 'hidden';
+    noscript.appendChild(iframe);
+    document.body.prepend(noscript);
+    
+    // --- END GTM ---
+
+    // 2. Define the Navigation Links
     const links = [
         { name: "Just Breathe", url: "index.html" },
         { name: "Tide Watcher", url: "tide.html" },
         { name: "Mandala", url: "mandala.html" },
-        { name: "Particle Cloud", url: "particlecloud.html" },
         { name: "Visual Mantra", url: "mantra.html" },
         { name: "Midnight Sleep", url: "sleep.html" },
-        { name: "EMDR Light", url: "emdr.html" }
+        { name: "Particle Cloud", url: "particlecloud.html" },        
+        { name: "EMDR Light", url: "emdr.html" },
+        { name: "TheMann00 Apps", url: "https://apps.themann00.com" }
     ];
 
-    // 2. Inject Responsive CSS & GLOBAL SLEEP STYLES
+    // 3. Inject Responsive CSS & GLOBAL SLEEP STYLES
     const style = document.createElement('style');
     style.innerHTML = `
         /* --- GLOBAL NAV STYLES --- */
@@ -182,7 +207,7 @@ document.addEventListener("DOMContentLoaded", function() {
     `;
     document.head.appendChild(style);
 
-    // 3. Build HTML Structure
+    // 4. Build HTML Structure
     const navBar = document.createElement('nav');
     navBar.className = 'global-nav';
 
@@ -248,7 +273,7 @@ document.addEventListener("DOMContentLoaded", function() {
     navBar.appendChild(container);    
     document.body.prepend(navBar);    
 
-    // --- LOGIC ---
+    // 5. Logic Handlers
 
     // Hamburger Toggle
     hamburger.addEventListener('click', (e) => {
