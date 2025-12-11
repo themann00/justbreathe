@@ -160,7 +160,6 @@
     const chaosSpeed = 2; // Max speed in chaos mode
     
     // --- Colors (RGB) ---
-    // We store RGB as array to interpolate
     let chaosColor = [255, 100, 100]; 
     let orderColor = [0, 150, 255]; 
     let currentColor = [...chaosColor];
@@ -171,53 +170,32 @@
         }
 
         reset() {
-            // Random position
             this.x = Math.random() * width;
             this.y = Math.random() * height;
-            
-            // Random velocity
             this.vx = (Math.random() - 0.5) * chaosSpeed;
             this.vy = (Math.random() - 0.5) * chaosSpeed;
-            
-            this.size = Math.random() * 3 + 1; // Size 1 to 4
+            this.size = Math.random() * 3 + 1;
         }
 
         update() {
             if (isHolding) {
-                // --- ORDER MODE (Attraction) ---
-                
-                // Calculate distance to center
                 const dx = centerX - this.x;
                 const dy = centerY - this.y;
-                
-                // Apply force towards center
-                this.vx += dx * attraction * 0.1; // 0.1 scales the force down
+                this.vx += dx * attraction * 0.1;
                 this.vy += dy * attraction * 0.1;
-
-                // Apply Strong Friction (Damping) so they settle
                 this.vx *= friction;
                 this.vy *= friction;
-
             } else {
-                // --- CHAOS MODE (Brownian-ish motion) ---
-                
-                // Add tiny random jitters
                 this.vx += (Math.random() - 0.5) * 0.2;
                 this.vy += (Math.random() - 0.5) * 0.2;
-
-                // Clamp max speed
                 const speed = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
                 if (speed > chaosSpeed) {
                     this.vx = (this.vx / speed) * chaosSpeed;
                     this.vy = (this.vy / speed) * chaosSpeed;
                 }
-
-                // Bounce off walls
                 if (this.x < 0 || this.x > width) this.vx *= -1;
                 if (this.y < 0 || this.y > height) this.vy *= -1;
             }
-
-            // Move
             this.x += this.vx;
             this.y += this.vy;
         }
@@ -230,20 +208,17 @@
         }
     }
 
-    // Initialize Particles
     for (let i = 0; i < particleCount; i++) {
         particles.push(new Particle());
     }
 
     function toggleTheme(e) {
-        if(e) e.stopPropagation(); // Don't trigger the "Hold" action
+        if(e) e.stopPropagation(); 
         const body = document.body;
         const currentTheme = body.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         body.setAttribute('data-theme', newTheme);
         
-        // Update physics colors based on CSS variables manually for now
-        // (Or just hardcode logic since Canvas doesn't read CSS vars easily every frame)
         if (newTheme === 'dark') {
             chaosColor = [255, 80, 80];
             orderColor = [0, 255, 200];
@@ -255,7 +230,9 @@
 
     // --- Interaction Listeners ---
     function startHold(e) { 
-        if(e.target.classList.contains('theme-switch')) return;
+        // SAFETY CHECK: If we touched a button (like Dark Mode or Nav), ignore the hold logic
+        if(e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('a')) return;
+        
         e.preventDefault(); 
         isHolding = true; 
         statusDiv.innerText = "Centering...";
@@ -263,12 +240,15 @@
     }
     
     function endHold(e) { 
+        // CRITICAL FIX: If we weren't holding, do NOT prevent default.
+        // This allows the "Click" to pass through to buttons and the nav menu.
+        if (!isHolding) return;
+
         e.preventDefault(); 
         isHolding = false; 
         statusDiv.innerText = "Chaos";
         statusDiv.style.color = "var(--text-sub)";
         
-        // Explode particles slightly outward when releasing for effect
         particles.forEach(p => {
             p.vx = (Math.random() - 0.5) * 5;
             p.vy = (Math.random() - 0.5) * 5;
@@ -286,12 +266,8 @@
     // Animation Loop
     function loop() {
         ctx.clearRect(0, 0, width, height);
-
-        // Color Interpolation (Smooth shift between Red and Blue)
         const targetColor = isHolding ? orderColor : chaosColor;
         
-        // Lerp (Linear Interpolation) for color R, G, B
-        // Factor 0.05 determines how fast the color changes
         currentColor[0] += (targetColor[0] - currentColor[0]) * 0.05;
         currentColor[1] += (targetColor[1] - currentColor[1]) * 0.05;
         currentColor[2] += (targetColor[2] - currentColor[2]) * 0.05;
@@ -305,7 +281,6 @@
             p.draw(r, g, b);
         });
 
-        // Dynamic Text Color update
         if(isHolding) {
              statusDiv.style.color = `rgb(${r}, ${g}, ${b})`;
              if (Math.abs(particles[0].vx) < 0.1) statusDiv.innerText = "Focus";
