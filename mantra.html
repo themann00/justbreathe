@@ -14,6 +14,12 @@
             --shadow: rgba(0,0,0,0.1);
             --toggle-border: #ddd;
             --mantra-color: #4a90e2; /* Soft Blue */
+            
+            /* Phase Colors */
+            --color-inhale: #77dd77;
+            --color-hold: #89CFF0;
+            --color-exhale: #b39eb5;
+            --color-rest: #FFB347;
         }
 
         [data-theme="dark"] {
@@ -60,7 +66,7 @@
         }
 
         .app-title {
-            margin: 0;
+            margin: 0 0 10px 0;
             font-size: 1.4rem;
             font-weight: 800;
             letter-spacing: 1px;
@@ -82,36 +88,81 @@
             z-index: 10;
         }
 
+        /* Tech Buttons */
+        .tech-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .tech-btn {
+            flex: 1;
+            padding: 8px 5px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            opacity: 0.6;
+            transform: scale(0.98);
+            transition: all 0.2s;
+        }
+
+        .tech-btn:hover { opacity: 0.8; }
+        .tech-btn.active { opacity: 1; transform: scale(1.02); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+
+        .btn-478 { background-color: var(--color-inhale); } 
+        .btn-box { background-color: var(--color-rest); } 
+        .btn-333 { background-color: var(--color-exhale); } 
+
         canvas {
             display: block;
             margin: 0 auto;
             width: 100%;
-            max-height: 40vh;
+            max-height: 35vh;
             object-fit: contain;
         }
 
-        .status-text {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-muted);
+        .status-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 2rem;
             margin: 5px 0;
-            min-height: 1.5rem;
         }
+
+        .status-text {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-sub);
+        }
+
+        .toggle-text-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            opacity: 0.5;
+            padding: 5px;
+        }
+        .toggle-text-btn:hover { opacity: 1; }
 
         .controls {
             border-top: 1px solid var(--text-muted);
-            padding-top: 15px;
+            padding-top: 10px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 8px;
             width: 90%;
             margin: 0 auto;
         }
 
-        /* Input Styling */
+        /* Mantra Input Styling */
         input[type="text"] {
             width: 100%;
-            padding: 10px;
+            padding: 8px;
             border-radius: 8px;
             border: 1px solid var(--text-muted);
             background: var(--bg-color);
@@ -119,6 +170,7 @@
             font-size: 1rem;
             text-align: center;
             box-sizing: border-box;
+            margin-bottom: 5px;
         }
 
         /* Preset Buttons */
@@ -126,15 +178,16 @@
             display: flex;
             gap: 5px;
             justify-content: center;
+            margin-bottom: 5px;
         }
 
         .preset-btn {
             background: none;
             border: 1px solid var(--text-muted);
             color: var(--text-muted);
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -144,25 +197,39 @@
             color: var(--text-main);
         }
 
-        .control-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        .timing-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
-        
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            text-align: left;
+        }
+
         label {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
             font-weight: 600;
-            white-space: nowrap;
+            display: flex;
+            justify-content: space-between;
         }
 
         input[type=range] {
             width: 100%;
             cursor: pointer;
+            height: 4px;
             accent-color: var(--text-main);
         }
+
+        /* Color-code the sliders */
+        #slideIn { accent-color: var(--color-inhale); }
+        #slideHold { accent-color: var(--color-hold); }
+        #slideOut { accent-color: var(--color-exhale); }
+        #slideRest { accent-color: var(--color-rest); }
 
     </style>
 </head>
@@ -173,9 +240,18 @@
     
     <h1 class="app-title">Visual Mantra</h1>
 
+    <div class="tech-buttons">
+        <button class="tech-btn btn-478 active" onclick="setPreset('478', this)">4-7-8 Relax</button>
+        <button class="tech-btn btn-box" onclick="setPreset('box', this)">Box Focus</button>
+        <button class="tech-btn btn-333" onclick="setPreset('333', this)">3-3-3 Calm</button>
+    </div>
+
+    <div class="status-container">
+        <div class="status-text" id="statusText">Repeating...</div>
+        <button class="toggle-text-btn" onclick="toggleTextVis()" title="Toggle Instructions">👁️</button>
+    </div>
+
     <canvas id="mantraCanvas" width="600" height="300"></canvas>
-    
-    <div class="status-text" id="statusText">Breathe with the words...</div>
     
     <div class="controls">
         <input type="text" id="mantraInput" value="I Am Calm" placeholder="Type your mantra..." oninput="updateMantra()">
@@ -187,9 +263,23 @@
             <button class="preset-btn" onclick="setMantra('Strength')">Strength</button>
         </div>
 
-        <div class="control-row">
-            <label>Duration</label>
-            <input type="range" id="speedSlider" min="3" max="10" step="0.5" value="5">
+        <div class="timing-grid">
+            <div class="slider-group">
+                <label>Inhale: <span id="valIn">4s</span></label>
+                <input type="range" id="slideIn" min="1" max="10" step="1" value="4" oninput="updateTimings()">
+            </div>
+            <div class="slider-group">
+                <label>Hold: <span id="valHold">7s</span></label>
+                <input type="range" id="slideHold" min="0" max="10" step="1" value="7" oninput="updateTimings()">
+            </div>
+            <div class="slider-group">
+                <label>Exhale: <span id="valOut">8s</span></label>
+                <input type="range" id="slideOut" min="1" max="10" step="1" value="8" oninput="updateTimings()">
+            </div>
+            <div class="slider-group">
+                <label>Rest: <span id="valRest">0s</span></label>
+                <input type="range" id="slideRest" min="0" max="10" step="1" value="0" oninput="updateTimings()">
+            </div>
         </div>
     </div>
 </div>
@@ -200,7 +290,18 @@
     const ctx = canvas.getContext('2d');
     const input = document.getElementById('mantraInput');
     const statusDiv = document.getElementById('statusText');
-    const speedSlider = document.getElementById('speedSlider');
+
+    // Inputs
+    const sIn = document.getElementById('slideIn');
+    const sHold = document.getElementById('slideHold');
+    const sOut = document.getElementById('slideOut');
+    const sRest = document.getElementById('slideRest');
+    
+    // Labels
+    const lIn = document.getElementById('valIn');
+    const lHold = document.getElementById('valHold');
+    const lOut = document.getElementById('valOut');
+    const lRest = document.getElementById('valRest');
 
     const width = canvas.width;
     const height = canvas.height;
@@ -208,13 +309,23 @@
     const centerY = height / 2;
 
     let mantraText = "I Am Calm";
-    let time = 0;
+    let textVisible = true;
+
+    // State
+    let phases = [];
+    let totalCycleTime = 0;
+    let startTime = performance.now();
 
     function toggleTheme() {
         const body = document.body;
         const currentTheme = body.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         body.setAttribute('data-theme', newTheme);
+    }
+
+    function toggleTextVis() {
+        textVisible = !textVisible;
+        statusDiv.style.opacity = textVisible ? "1" : "0";
     }
 
     function updateMantra() {
@@ -226,9 +337,44 @@
         mantraText = text;
     }
 
+    // --- PRESET LOGIC ---
+    function setPreset(type, btn) {
+        document.querySelectorAll('.tech-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (type === '478') {
+            sIn.value = 4; sHold.value = 7; sOut.value = 8; sRest.value = 0;
+        } else if (type === 'box') {
+            sIn.value = 4; sHold.value = 4; sOut.value = 4; sRest.value = 4;
+        } else if (type === '333') {
+            sIn.value = 3; sHold.value = 3; sOut.value = 3; sRest.value = 0;
+        }
+        updateTimings();
+    }
+
+    function updateTimings() {
+        lIn.innerText = sIn.value + "s";
+        lHold.innerText = sHold.value + "s";
+        lOut.innerText = sOut.value + "s";
+        lRest.innerText = sRest.value + "s";
+
+        phases = [
+            { type: 'inhale', duration: parseInt(sIn.value) * 1000, label: "Repeating (Inhale)" },
+            { type: 'hold', duration: parseInt(sHold.value) * 1000, label: "Hold Awareness" },
+            { type: 'exhale', duration: parseInt(sOut.value) * 1000, label: "Fading (Exhale)" },
+            { type: 'rest', duration: parseInt(sRest.value) * 1000, label: "Silence (Rest)" }
+        ].filter(p => p.duration > 0);
+
+        totalCycleTime = phases.reduce((acc, p) => acc + p.duration, 0);
+        startTime = performance.now();
+    }
+
+    // Initialize
+    updateTimings();
+
     // Helper to scale font size based on text length
     function getFontSize(text) {
-        const maxLength = 20; // Chars before scaling down
+        const maxLength = 20;
         let size = 80;
         if (text.length > 8) size = 60;
         if (text.length > 12) size = 45;
@@ -236,44 +382,69 @@
         return size;
     }
 
-    function draw() {
+    function draw(currentTime) {
         ctx.clearRect(0, 0, width, height);
 
-        // Update Physics
-        const cycleDuration = parseFloat(speedSlider.value);
-        const speed = (Math.PI * 2) / (cycleDuration * 60);
-        time += speed;
+        // 1. Determine Phase
+        const elapsed = (currentTime - startTime) % totalCycleTime;
+        let timeAccumulator = 0;
+        let activePhase = phases[0];
+        let phaseProgress = 0;
 
-        // Calculate Breath Cycle (0 to 1)
-        // Shifted so -PI/2 is start (0)
-        const sine = Math.sin(time - Math.PI/2); 
-        const opacity = (sine + 1) / 2; 
+        for (let p of phases) {
+            if (elapsed < timeAccumulator + p.duration) {
+                activePhase = p;
+                const timeInPhase = elapsed - timeAccumulator;
+                phaseProgress = timeInPhase / p.duration;
+                break;
+            }
+            timeAccumulator += p.duration;
+        }
+
+        if(textVisible) statusDiv.innerText = activePhase.label;
+
+        // 2. Calculate Opacity based on Phase
+        let opacity = 0;
+
+        if (activePhase.type === 'inhale') {
+            // Fade In (0 -> 1)
+            opacity = (Math.sin((phaseProgress * Math.PI) - (Math.PI/2)) + 1) / 2;
+        } 
+        else if (activePhase.type === 'hold') {
+            // Stay Visible
+            opacity = 1; 
+        } 
+        else if (activePhase.type === 'exhale') {
+            // Fade Out (1 -> 0)
+            opacity = 1 - ((Math.sin((phaseProgress * Math.PI) - (Math.PI/2)) + 1) / 2);
+        } 
+        else if (activePhase.type === 'rest') {
+            // Stay Invisible
+            opacity = 0; 
+        }
 
         // --- VISUALS ---
         
-        // 1. Get Color from CSS
         const style = getComputedStyle(document.body);
-        const baseColor = style.getPropertyValue('--mantra-color').trim(); // Hex or name
+        const baseColor = style.getPropertyValue('--mantra-color').trim(); 
         
-        // Canvas needs RGBA for opacity, so we just use globalAlpha
         ctx.save();
-        ctx.globalAlpha = Math.max(0.02, opacity); // Never go fully invisible (0.02 min)
+        ctx.globalAlpha = Math.max(0.02, opacity); // Min opacity so it doesn't flicker
         
-        // 2. Text Setup
+        // Font Setup
         const fontSize = getFontSize(mantraText);
         ctx.font = `bold ${fontSize}px "Segoe UI", sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillStyle = baseColor;
 
-        // 3. Glow Effect (Only at high opacity)
+        // Glow Effect
         if (opacity > 0.8) {
             ctx.shadowColor = baseColor;
-            ctx.shadowBlur = (opacity - 0.8) * 100; // Blur increases as we reach peak
+            ctx.shadowBlur = (opacity - 0.8) * 100; 
         }
 
-        // 4. Draw Text
-        // Slight scale effect for breathing feel (95% to 105%)
+        // Slight breathing scale
         const scale = 0.95 + (opacity * 0.1);
         ctx.translate(centerX, centerY);
         ctx.scale(scale, scale);
@@ -281,17 +452,10 @@
 
         ctx.restore();
 
-        // 5. Update Status Text
-        // Derivative (Cosine) tells us direction
-        const phase = Math.cos(time - Math.PI/2);
-        if (phase > 0.3) statusDiv.innerText = "Repeating (Inhale)...";
-        else if (phase < -0.3) statusDiv.innerText = "Fading (Exhale)...";
-        else statusDiv.innerText = opacity > 0.5 ? "Hold Awareness" : "Silence";
-
         requestAnimationFrame(draw);
     }
 
-    draw();
+    requestAnimationFrame(draw);
 
 </script>
 
