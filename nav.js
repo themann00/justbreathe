@@ -4,9 +4,9 @@ document.addEventListener("DOMContentLoaded", function() {
         { name: "Just Breathe", url: "index.html" },
         { name: "Tide Watcher", url: "tide.html" },
         { name: "Mandala", url: "mandala.html" },
-        { name: "Particle Cloud", url: "particlecloud.html" },
         { name: "Visual Mantra", url: "mantra.html" },
         { name: "Midnight Sleep", url: "sleep.html" },
+        { name: "Particle Cloud", url: "particlecloud.html" },
         { name: "EMDR Light", url: "emdr.html" }
     ];
 
