@@ -13,6 +13,11 @@
             --text-muted: #888;
             --shadow: rgba(0,0,0,0.1);
             --toggle-border: #ddd;
+            /* Phase Colors */
+            --color-inhale: #77dd77;
+            --color-hold: #89CFF0;
+            --color-exhale: #b39eb5;
+            --color-rest: #FFB347;
         }
 
         [data-theme="dark"] {
@@ -58,7 +63,7 @@
         }
 
         .app-title {
-            margin: 0;
+            margin: 0 0 10px 0;
             font-size: 1.4rem;
             font-weight: 800;
             letter-spacing: 1px;
@@ -80,54 +85,112 @@
             z-index: 10;
         }
 
+        /* Tech Buttons */
+        .tech-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .tech-btn {
+            flex: 1;
+            padding: 8px 5px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            opacity: 0.6;
+            transform: scale(0.98);
+            transition: all 0.2s;
+        }
+
+        .tech-btn:hover { opacity: 0.8; }
+        .tech-btn.active { opacity: 1; transform: scale(1.02); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+
+        .btn-478 { background-color: var(--color-inhale); } 
+        .btn-box { background-color: var(--color-rest); } 
+        .btn-333 { background-color: var(--color-exhale); } 
+
         canvas {
             display: block;
             margin: 0 auto;
             width: auto;
-            max-height: 45vh; /* Allow generous height for the circle */
+            max-height: 35vh; 
             max-width: 100%;
             object-fit: contain;
             flex-shrink: 1;
         }
 
+        .status-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 2rem;
+            margin: 5px 0;
+        }
+
         .status-text {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 600;
             color: var(--text-sub);
-            margin: 5px 0;
-            min-height: 2rem;
         }
+
+        .toggle-text-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            opacity: 0.5;
+            padding: 5px;
+        }
+        .toggle-text-btn:hover { opacity: 1; }
 
         .controls {
             border-top: 1px solid var(--text-muted);
-            padding-top: 15px;
+            padding-top: 10px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 8px;
             width: 90%;
             margin: 0 auto;
         }
 
-        .control-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        .timing-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
 
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            text-align: left;
+        }
+
         label {
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
             font-weight: 600;
-            min-width: 70px;
-            text-align: left;
+            display: flex;
+            justify-content: space-between;
         }
 
         input[type=range] {
             width: 100%;
             cursor: pointer;
+            height: 4px;
             accent-color: var(--text-main);
         }
+
+        /* Color-code the timing sliders */
+        #slideIn { accent-color: var(--color-inhale); }
+        #slideHold { accent-color: var(--color-hold); }
+        #slideOut { accent-color: var(--color-exhale); }
+        #slideRest { accent-color: var(--color-rest); }
 
     </style>
 </head>
@@ -138,17 +201,41 @@
     
     <h1 class="app-title">Mandala Focus</h1>
 
-    <div class="status-text" id="statusText">Expand...</div>
+    <div class="tech-buttons">
+        <button class="tech-btn btn-478 active" onclick="setPreset('478', this)">4-7-8 Relax</button>
+        <button class="tech-btn btn-box" onclick="setPreset('box', this)">Box Focus</button>
+        <button class="tech-btn btn-333" onclick="setPreset('333', this)">3-3-3 Calm</button>
+    </div>
+
+    <div class="status-container">
+        <div class="status-text" id="statusText">Expand...</div>
+        <button class="toggle-text-btn" onclick="toggleTextVis()" title="Toggle Instructions">👁️</button>
+    </div>
 
     <canvas id="mandalaCanvas" width="400" height="400"></canvas>
     
     <div class="controls">
-        <div class="control-row">
-            <label>Speed</label>
-            <input type="range" id="speedSlider" min="0.5" max="3" step="0.1" value="1.5">
+        <div class="timing-grid">
+            <div class="slider-group">
+                <label>Inhale: <span id="valIn">4s</span></label>
+                <input type="range" id="slideIn" min="1" max="10" step="1" value="4" oninput="updateTimings()">
+            </div>
+            <div class="slider-group">
+                <label>Hold: <span id="valHold">7s</span></label>
+                <input type="range" id="slideHold" min="0" max="10" step="1" value="7" oninput="updateTimings()">
+            </div>
+            <div class="slider-group">
+                <label>Exhale: <span id="valOut">8s</span></label>
+                <input type="range" id="slideOut" min="1" max="10" step="1" value="8" oninput="updateTimings()">
+            </div>
+            <div class="slider-group">
+                <label>Rest: <span id="valRest">0s</span></label>
+                <input type="range" id="slideRest" min="0" max="10" step="1" value="0" oninput="updateTimings()">
+            </div>
         </div>
-        <div class="control-row">
-            <label>Layers</label>
+
+        <div class="slider-group" style="margin-top:5px; border-top:1px dashed #eee; padding-top:5px;">
+            <label>Complexity (Layers)</label>
             <input type="range" id="complexitySlider" min="6" max="24" step="2" value="12">
         </div>
     </div>
@@ -159,17 +246,32 @@
     const canvas = document.getElementById('mandalaCanvas');
     const ctx = canvas.getContext('2d');
     const statusDiv = document.getElementById('statusText');
-    const speedSlider = document.getElementById('speedSlider');
     const complexitySlider = document.getElementById('complexitySlider');
+
+    // Inputs
+    const sIn = document.getElementById('slideIn');
+    const sHold = document.getElementById('slideHold');
+    const sOut = document.getElementById('slideOut');
+    const sRest = document.getElementById('slideRest');
+    
+    // Labels
+    const lIn = document.getElementById('valIn');
+    const lHold = document.getElementById('valHold');
+    const lOut = document.getElementById('valOut');
+    const lRest = document.getElementById('valRest');
 
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
 
-    let time = 0;
+    // State
+    let rotationTime = 0; // Continuous rotation
+    let phases = [];
+    let totalCycleTime = 0;
+    let startTime = performance.now();
+    let textVisible = true;
     
     // Config
     let petalCount = 12;
-    let breathSpeed = 1.5;
 
     function toggleTheme() {
         const body = document.body;
@@ -178,112 +280,155 @@
         body.setAttribute('data-theme', newTheme);
     }
 
+    function toggleTextVis() {
+        textVisible = !textVisible;
+        statusDiv.style.opacity = textVisible ? "1" : "0";
+    }
+
+    function setPreset(type, btn) {
+        document.querySelectorAll('.tech-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (type === '478') {
+            sIn.value = 4; sHold.value = 7; sOut.value = 8; sRest.value = 0;
+        } else if (type === 'box') {
+            sIn.value = 4; sHold.value = 4; sOut.value = 4; sRest.value = 4;
+        } else if (type === '333') {
+            sIn.value = 3; sHold.value = 3; sOut.value = 3; sRest.value = 0;
+        }
+        updateTimings();
+    }
+
+    function updateTimings() {
+        lIn.innerText = sIn.value + "s";
+        lHold.innerText = sHold.value + "s";
+        lOut.innerText = sOut.value + "s";
+        lRest.innerText = sRest.value + "s";
+
+        phases = [
+            { type: 'inhale', duration: parseInt(sIn.value) * 1000, label: "Expand (Inhale)" },
+            { type: 'hold', duration: parseInt(sHold.value) * 1000, label: "Hold Bloom" },
+            { type: 'exhale', duration: parseInt(sOut.value) * 1000, label: "Fold In (Exhale)" },
+            { type: 'rest', duration: parseInt(sRest.value) * 1000, label: "Center (Rest)" }
+        ].filter(p => p.duration > 0);
+
+        totalCycleTime = phases.reduce((acc, p) => acc + p.duration, 0);
+        startTime = performance.now();
+    }
+
+    // Initialize
+    updateTimings();
+
     function drawPetal(x, y, width, height, color) {
         ctx.fillStyle = color;
         ctx.beginPath();
         ctx.moveTo(x, y);
-        // Bezier curve for a petal shape (teardrop)
         ctx.bezierCurveTo(x + width / 2, y - height / 2, x + width, y + height / 2, x, y + height);
         ctx.bezierCurveTo(x - width, y + height / 2, x - width / 2, y - height / 2, x, y);
         ctx.fill();
     }
 
-    function draw() {
-        // Clear
+    function draw(currentTime) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Update Inputs
-        breathSpeed = parseFloat(speedSlider.value);
+        // Update Complexity
         petalCount = parseInt(complexitySlider.value);
 
-        // Advance Time
-        // The speed slider controls how fast the sine wave moves
-        time += 0.01 * breathSpeed;
+        // Continuous Rotation (Independent of breath phase)
+        rotationTime += 0.005; 
 
-        // Calculate Breath Cycle (0 to 1)
-        const sine = Math.sin(time); // -1 to 1
-        const breath = (sine + 1) / 2; // 0 to 1
-        
+        // 1. Determine Phase
+        const elapsed = (currentTime - startTime) % totalCycleTime;
+        let timeAccumulator = 0;
+        let activePhase = phases[0];
+        let phaseProgress = 0;
+
+        for (let p of phases) {
+            if (elapsed < timeAccumulator + p.duration) {
+                activePhase = p;
+                const timeInPhase = elapsed - timeAccumulator;
+                phaseProgress = timeInPhase / p.duration;
+                break;
+            }
+            timeAccumulator += p.duration;
+        }
+
+        if(textVisible) statusDiv.innerText = activePhase.label;
+
+        // 2. Calculate "Breath" value (0.0 to 1.0) for Expansion
+        let breath = 0;
+
+        if (activePhase.type === 'inhale') {
+            // Sine Ease Out: 0 -> 1
+            breath = (Math.sin((phaseProgress * Math.PI) - (Math.PI/2)) + 1) / 2;
+        } 
+        else if (activePhase.type === 'hold') {
+            breath = 1; // Fully Bloomed
+        } 
+        else if (activePhase.type === 'exhale') {
+            // Sine Ease In: 1 -> 0
+            breath = 1 - ((Math.sin((phaseProgress * Math.PI) - (Math.PI/2)) + 1) / 2);
+        } 
+        else if (activePhase.type === 'rest') {
+            breath = 0; // Fully Closed
+        }
+
         // --- VISUALS ---
-        
-        // 1. Determine Colors based on Theme & Phase
         const isDark = document.body.getAttribute('data-theme') === 'dark';
         
         // HSL Color Shift based on breath
-        // Light mode: Blue/Teal/Purple
-        // Dark mode: Cyan/Magenta/Purple
         const hueBase = isDark ? 280 : 200; 
-        const hueShift = sine * 40; // Shift hue by +/- 40 degrees
+        const hueShift = breath * 40; 
         const hue = hueBase + hueShift;
-        
         const lightness = isDark ? 60 : 50;
+        
         const colorMain = `hsla(${hue}, 70%, ${lightness}%, 0.6)`;
         const colorInner = `hsla(${hue + 30}, 70%, ${lightness + 10}%, 0.8)`;
 
-        // 2. Global Rotation (Slow constant spin)
+        // Global Rotation
         ctx.save();
         ctx.translate(centerX, centerY);
-        ctx.rotate(time * 0.2); // Constant slow rotation
+        ctx.rotate(rotationTime); 
         
-        // 3. Draw Outer Layer (Expands Outward)
-        // Expansion logic: base radius + breath variance
+        // Draw Outer Layer
         const outerRadius = 40 + (breath * 60); 
         
         for (let i = 0; i < petalCount; i++) {
             ctx.save();
-            // Rotate to position for this petal
             ctx.rotate((Math.PI * 2 / petalCount) * i);
-            // Move out to radius
             ctx.translate(0, outerRadius);
-            // Rotate the petal itself slightly based on breath (blooming effect)
-            ctx.rotate(sine * 0.5); 
-            
+            // Petal blooming rotation (twists as it breathes)
+            ctx.rotate(breath * 0.2); 
             drawPetal(0, 0, 40, 80, colorMain);
             ctx.restore();
         }
 
-        // 4. Draw Inner Layer (Offsets slightly)
+        // Draw Inner Layer
         const innerRadius = 10 + (breath * 30);
-        
-        // Rotate the inner ring slightly offset from outer
         ctx.rotate(Math.PI / petalCount); 
 
         for (let i = 0; i < petalCount; i++) {
             ctx.save();
             ctx.rotate((Math.PI * 2 / petalCount) * i);
             ctx.translate(0, innerRadius);
-            // Inner petals scale up/down with breath
             const scale = 0.5 + (breath * 0.3);
             ctx.scale(scale, scale);
-            
             drawPetal(0, 0, 30, 60, colorInner);
             ctx.restore();
         }
 
-        // 5. Center Core
+        // Center Core
         ctx.beginPath();
         ctx.arc(0, 0, 15 + (breath * 5), 0, Math.PI * 2);
         ctx.fillStyle = colorInner;
         ctx.fill();
 
-        ctx.restore(); // Undo global translation
-
-        // --- TEXT LOGIC ---
-        // Cosine determines rate of change (Velocity)
-        const velocity = Math.cos(time);
-        
-        if (velocity > 0.2) {
-            statusDiv.innerText = "Expand (Inhale)";
-        } else if (velocity < -0.2) {
-            statusDiv.innerText = "Contract (Exhale)";
-        } else {
-            statusDiv.innerText = "Center...";
-        }
+        ctx.restore();
 
         requestAnimationFrame(draw);
     }
 
-    draw();
+    requestAnimationFrame(draw);
 
 </script>
 
