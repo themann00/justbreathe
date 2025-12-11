@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", function() {
             height: 40px; 
         }
 
-        /* --- CONTROLS GROUP (Sleep/Dark Buttons) --- */
+        /* --- CONTROLS GROUP --- */
         .nav-controls {
             display: flex;
             align-items: center;
@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .control-btn:hover { background-color: #f0f4f8; }
         .control-btn svg { width: 18px; height: 18px; stroke-width: 2; }
 
-        /* Active States for Buttons */
+        /* Active States */
         .control-btn.active-sleep {
             background-color: #500;
             border-color: #800;
@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .nav-link:hover { background-color: #f0f4f8; color: #333; }
         .nav-link.active { background-color: #e6f7ff; color: #007bff; font-weight: 600; }
 
-        /* REFRESH BUTTON (Separate Style) */
+        /* REFRESH BUTTON */
         .refresh-btn {
             background: none;
             border: none;
@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", function() {
         [data-theme="dark"] .refresh-btn, [data-theme="dark"] .control-btn { color: #ccc; border-color: #555; }
         [data-theme="dark"] .refresh-btn:hover, [data-theme="dark"] .control-btn:hover { background-color: #444; color: #fff; }
 
-        /* --- GLOBAL SLEEP MODE (The Red Shift) --- */
+        /* --- GLOBAL SLEEP MODE (Red Shift) --- */
         body.sleep-mode {
             --bg-color: #000000 !important;
             --container-bg: #050000 !important;
@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", function() {
             --shadow: rgba(0, 0, 0, 1) !important;
             --toggle-border: #300 !important;
             
-            /* Tide Watcher Specifics */
+            /* App Specific Overrides */
             --wave-front: rgba(80, 0, 0, 0.9) !important;
             --wave-back: rgba(40, 0, 0, 0.5) !important;
             --color-inhale: #900 !important;   
@@ -133,10 +133,7 @@ document.addEventListener("DOMContentLoaded", function() {
             --color-exhale: #500 !important;   
             --color-rest: #300 !important;     
             --porthole-border: #200 !important;
-
-            /* Nav Bar Red Shift */
-            --nav-bg: #0a0000 !important;
-            --nav-text: #600 !important;
+            --mantra-color: #800 !important;
         }
 
         body.sleep-mode .global-nav { background-color: #0a0000 !important; border-bottom: 1px solid #300; }
@@ -177,7 +174,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             .hamburger { display: flex; }
             
-            /* Move controls to center on mobile */
+            /* Center controls on mobile */
             .nav-controls { position: absolute; left: 50%; transform: translateX(-50%); }
         }
 
@@ -199,26 +196,31 @@ document.addEventListener("DOMContentLoaded", function() {
     refreshBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>`;
     refreshBtn.addEventListener('click', () => window.location.reload());
 
-    // --- CENTER/RIGHT: Controls (Sleep & Dark) ---
+    // --- CENTER/RIGHT: Controls ---
     const controlsDiv = document.createElement('div');
     controlsDiv.className = 'nav-controls';
+
+    // Icons
+    const iconSun = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
+    const iconMoon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+    const iconZzz = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h10l-10 10h10"/><path d="M14 2h6l-6 6h6"/></svg>`;
 
     // Sleep Button
     const sleepBtn = document.createElement('button');
     sleepBtn.className = 'control-btn';
     sleepBtn.title = "Sleep Mode (Red Light)";
-    sleepBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>`;
+    sleepBtn.innerHTML = iconZzz;
     
     // Dark Mode Button
     const darkBtn = document.createElement('button');
     darkBtn.className = 'control-btn';
     darkBtn.title = "Toggle Dark Mode";
-    darkBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
+    // Icon set dynamically later
 
     controlsDiv.appendChild(sleepBtn);
     controlsDiv.appendChild(darkBtn);
 
-    // --- LINKS (Desktop center, Mobile dropdown) ---
+    // --- LINKS ---
     const linkGroup = document.createElement('div');
     linkGroup.className = 'nav-links';
     const currentPage = window.location.pathname.split("/").pop() || "index.html";
@@ -239,8 +241,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Assemble
     container.appendChild(refreshBtn);
-    container.appendChild(linkGroup); // Desktop: Links here
-    container.appendChild(controlsDiv); // Center/Right controls
+    container.appendChild(linkGroup); 
+    container.appendChild(controlsDiv); 
     container.appendChild(hamburger);
 
     navBar.appendChild(container);    
@@ -257,6 +259,17 @@ document.addEventListener("DOMContentLoaded", function() {
         if (!navBar.contains(e.target)) linkGroup.classList.remove('open');
     });
 
+    // Icon Updater
+    function updateThemeIcon(isDark) {
+        if (isDark) {
+            darkBtn.innerHTML = iconSun; // Show Sun if dark
+            darkBtn.title = "Switch to Light Mode";
+        } else {
+            darkBtn.innerHTML = iconMoon; // Show Moon if light
+            darkBtn.title = "Switch to Dark Mode";
+        }
+    }
+
     // Dark Mode Logic
     function setDarkMode(isDark) {
         if (isDark) {
@@ -266,6 +279,7 @@ document.addEventListener("DOMContentLoaded", function() {
             document.body.setAttribute('data-theme', 'light');
             localStorage.setItem('theme', 'light');
         }
+        updateThemeIcon(isDark);
     }
 
     darkBtn.addEventListener('click', () => {
@@ -300,7 +314,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Load State on Page Load
     const savedTheme = localStorage.getItem('theme');
+    // Default to light icon if null, or sun if dark
     if (savedTheme === 'dark') setDarkMode(true);
+    else updateThemeIcon(false);
     
     const savedSleep = localStorage.getItem('sleepMode');
     if (savedSleep === 'true') setSleepMode(true);
