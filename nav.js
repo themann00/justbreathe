@@ -6,7 +6,9 @@ document.addEventListener("DOMContentLoaded", function() {
         { name: "EMDR Light", url: "emdr.html" },
         { name: "Mandala", url: "mandala.html" },
         { name: "Particle Cloud", url: "particlecloud.html" },
-        { name: "Visual Mantra", url: "mantra.html" }
+        { name: "Visual Mantra", url: "mantra.html" }, 
+        { name: "Midnight Sleep", url: 
+"sleep.html" }
     ];
 
     // 2. Inject Responsive CSS
