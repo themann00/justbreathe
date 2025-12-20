@@ -21,6 +21,14 @@ const navHtml = `
         <button id="pwa-install-btn" class="nav-icon-btn" style="display: none;" title="Install App">
             ⬇️
         </button>
+        <!-- Reload Button -->
+        <button class="nav-icon-btn" onclick="window.location.reload()" title="Reload">
+            🔄
+        </button>
+        <!-- Sleep Mode Button -->
+        <button id="sleep-btn" class="nav-icon-btn" onclick="toggleSleepMode()" title="Sleep Mode">
+            Zz
+        </button>
         <!-- Theme Toggle (Visible in Nav now) -->
         <button id="nav-theme-btn" class="nav-icon-btn" onclick="if(window.toggleTheme) window.toggleTheme()" title="Toggle Theme">◑</button>
         <!-- Hamburger Menu -->
@@ -147,6 +155,26 @@ const navCss = `
         .drawer { display: none; }
         /* Hide the drawer theme toggle if we wanted, but drawer is hidden anyway */
     }
+
+    /* --- Global Sleep Mode (Red Shift) --- */
+    body.sleep-mode {
+        --bg-color: #000000 !important;
+        --container-bg: #050000 !important;
+        --text-main: #700 !important;
+        --text-sub: #600 !important;
+        --text-muted: #400 !important;
+        --shadow: rgba(0,0,0,1) !important;
+        --toggle-border: #300 !important;
+        
+        /* Red-Shifted Phases */
+        --color-inhale: #900 !important;
+        --color-hold: #700 !important;
+        --color-exhale: #500 !important;
+        --color-rest: #300 !important;
+    }
+    body.sleep-mode .nav-icon-btn { color: #600 !important; }
+    body.sleep-mode #sleep-btn { color: #d00 !important; font-weight: bold; text-shadow: 0 0 5px #500; }
+    body.sleep-mode .nav-center a { color: #500 !important; }
 `;
 
 // 3. Inject HTML & CSS
@@ -191,3 +219,17 @@ installBtn.addEventListener('click', async () => {
     console.log(`User response to the install prompt: ${outcome}`);
     deferredPrompt = null;
 });
+
+// 6. Global Sleep Mode Fallback
+// (Allows pages like tide.html to override this with specific logic, 
+// otherwise provides a default implementation for pages like mantra.html)
+if (!window.toggleSleepMode) {
+    window.toggleSleepMode = function() {
+        document.body.classList.toggle('sleep-mode');
+        const isSleep = document.body.classList.contains('sleep-mode');
+        if (isSleep) {
+            document.body.setAttribute('data-theme', 'dark');
+        }
+        if (typeof window.updateStyles === 'function') window.updateStyles();
+    };
+}
