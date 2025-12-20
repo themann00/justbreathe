@@ -147,6 +147,22 @@
         }
         .toggle-text-btn:hover { opacity: 1; }
 
+        .progress-bar-container {
+            width: 200px;
+            height: 4px;
+            background: rgba(0,0,0,0.05);
+            margin: 0 auto 5px auto;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background-color: var(--text-muted);
+            transition: width 0.1s linear, background-color 0.3s;
+        }
+
         .controls {
             border-top: 1px solid var(--text-muted);
             padding-top: 10px;
@@ -247,6 +263,9 @@
         <div class="status-text" id="statusText">Repeating...</div>
         <button class="toggle-text-btn" onclick="toggleTextVis()" title="Toggle Instructions">👁️</button>
     </div>
+    <div class="progress-bar-container">
+        <div id="holdProgressBar" class="progress-bar-fill"></div>
+    </div>
 
     <canvas id="mantraCanvas" width="600" height="300"></canvas>
     
@@ -287,6 +306,7 @@
     const ctx = canvas.getContext('2d');
     const input = document.getElementById('mantraInput');
     const statusDiv = document.getElementById('statusText');
+    const progressBar = document.getElementById('holdProgressBar');
 
     // Inputs
     const sIn = document.getElementById('slideIn');
@@ -415,6 +435,15 @@
         if(textVisible) statusDiv.innerText = activePhase.label;
 
         // 2. Calculate Opacity based on Phase
+        
+        // Update Progress Bar
+        if (activePhase.type === 'hold') {
+            progressBar.style.width = (phaseProgress * 100) + "%";
+            progressBar.style.backgroundColor = cachedStyles.hold;
+        } else {
+            progressBar.style.width = "0%";
+        }
+
         let opacity = 0;
         let currentColor = cachedStyles.default;
 

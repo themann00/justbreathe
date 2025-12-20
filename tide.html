@@ -540,6 +540,15 @@
         ctx.lineWidth = 10;
         ctx.stroke();
 
+        // 3b. Draw Hold Progress Overlay
+        if (activePhase.type === 'hold') {
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius + 5, -Math.PI/2, -Math.PI/2 + (Math.PI * 2 * phaseProgress));
+            ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--text-main').trim();
+            ctx.lineWidth = 10;
+            ctx.stroke();
+        }
+
         // 4. Draw Water (Clipped)
         ctx.save();
         ctx.beginPath();

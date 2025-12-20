@@ -407,6 +407,20 @@
         else ctx.rect(x, y, size, size);
         ctx.fill();
 
+        // Draw Progress Border during Hold phases
+        if (activePhase.name.includes('hold')) {
+            const progress = timeInPhase / (activePhase.duration * 1000);
+            // Approximate perimeter for dash offset: 4 * size (rect) or adjusted for rounded corners
+            // RoundRect perimeter approx: 2(w+h) - 8r + 2*PI*r. Here w=h=size, r=40.
+            const perimeter = ctx.roundRect ? (4 * size - 8 * 40 + 2 * Math.PI * 40) : (4 * size);
+            
+            ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--text-main').trim();
+            ctx.lineWidth = 4;
+            ctx.setLineDash([perimeter * progress, perimeter]);
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset
+        }
+
         statusDiv.innerText = activePhase.label;
         statusDiv.style.color = activePhase.color;
         phaseTimerDiv.innerText = Math.ceil(activePhase.duration - (timeInPhase/1000)) + "s";
