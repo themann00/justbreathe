@@ -13,6 +13,12 @@
             --text-muted: #888;
             --shadow: rgba(0,0,0,0.1);
             --toggle-border: #ddd;
+            
+            /* Phase Colors */
+            --color-inhale: #77dd77;
+            --color-hold: #89CFF0;
+            --color-exhale: #b39eb5;
+            --color-rest: #FFB347;
         }
 
         [data-theme="dark"] {
@@ -114,9 +120,9 @@
         }
 
         .tech-btn.active { opacity: 1; transform: scale(1); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .btn-478 { background-color: #77dd77; } 
-        .btn-box { background-color: #FFB347; } 
-        .btn-333 { background-color: #b39eb5; } 
+        .btn-478 { background-color: var(--color-inhale); } 
+        .btn-box { background-color: var(--color-rest); } 
+        .btn-333 { background-color: var(--color-exhale); } 
 
         /* Canvas Responsive Fix */
         canvas {
