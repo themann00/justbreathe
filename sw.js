@@ -1,4 +1,4 @@
-const CACHE_NAME = 'justbreathe-v2';
+const CACHE_NAME = 'justbreathe-v3';
 const ASSETS = [
     './',
     'index.html',
@@ -27,5 +27,21 @@ self.addEventListener('fetch', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
-    e.waitUntil(clients.claim()); // Take control of all pages immediately
+    e.waitUntil(
+        Promise.all([
+            // Clean up old caches
+            caches.keys().then((cacheNames) => {
+                return Promise.all(
+                    cacheNames.map((cacheName) => {
+                        if (cacheName !== CACHE_NAME) {
+                            console.log('Deleting old cache:', cacheName);
+                            return caches.delete(cacheName);
+                        }
+                    })
+                );
+            }),
+            // Take control of all pages immediately
+            clients.claim()
+        ])
+    );
 });

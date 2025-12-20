@@ -50,8 +50,6 @@ const navHtml = `
         <a href="mandala.html">Mandala Focus</a>
         <a href="emdr.html">EMDR Light</a>
         <a href="sleep.html">Midnight Sleep</a>
-        <hr style="width:100%; border:0; border-top:1px solid var(--text-muted); opacity:0.3;">
-        <button onclick="if(window.toggleTheme) window.toggleTheme()" class="drawer-item">Toggle Theme</button>
     </div>
 </div>
 `;
