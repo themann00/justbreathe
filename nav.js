@@ -18,8 +18,12 @@ const navHtml = `
 
     <div class="nav-right">
         <!-- Install Button (Hidden by default) -->
-        <button id="pwa-install-btn" class="nav-icon-btn" style="display: none;" title="Install App">
-            ⬇️
+        <button id="pwa-install-btn" class="nav-icon-btn install-btn" style="display: none;" title="Install App">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
         </button>
         <!-- Reload Button -->
         <button class="nav-icon-btn" onclick="window.location.reload()" title="Reload">
@@ -114,16 +118,29 @@ const navCss = `
 
     /* Install Button Styling */
     #pwa-install-btn {
-        font-size: 1rem;
-        border: 1px solid var(--text-muted, #ccc);
-        border-radius: 20px;
-        padding: 5px 10px;
-        height: 32px;
-        transition: all 0.2s;
+        border: 2px solid var(--text-main, #333);
+        border-radius: 8px;
+        padding: 6px 12px;
+        height: 36px;
+        transition: all 0.3s ease;
+        animation: pulse-install 2s ease-in-out infinite;
     }
     #pwa-install-btn:hover {
         background-color: var(--text-main, #333);
         color: var(--container-bg, white);
+        transform: translateY(-2px);
+        animation: none;
+    }
+
+    @keyframes pulse-install {
+        0%, 100% {
+            transform: scale(1);
+            border-color: var(--text-main, #333);
+        }
+        50% {
+            transform: scale(1.05);
+            border-color: #77dd77;
+        }
     }
 
     /* Drawer Styles */
@@ -204,24 +221,36 @@ let deferredPrompt;
 const installBtn = document.getElementById('pwa-install-btn');
 
 window.addEventListener('beforeinstallprompt', (e) => {
-    console.log('JustBreathe: PWA Install Event Fired!');
-    e.preventDefault(); // Prevent Chrome 67+ from automatically showing the prompt
+    console.log('✅ JustBreathe: PWA Install Event Fired! Button will now be shown.');
+    e.preventDefault(); // Prevent Chrome from automatically showing the prompt
     deferredPrompt = e; // Stash the event
     installBtn.style.display = 'flex'; // Show our custom button
 });
 
 installBtn.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+        console.log('⚠️ No install prompt available');
+        return;
+    }
+    console.log('📱 Showing PWA install prompt...');
     installBtn.style.display = 'none';
     deferredPrompt.prompt(); // Show the native prompt
     const { outcome } = await deferredPrompt.userChoice;
-    console.log(`User response to the install prompt: ${outcome}`);
+    console.log(`User ${outcome === 'accepted' ? '✅ accepted' : '❌ dismissed'} the install prompt`);
+    deferredPrompt = null;
+});
+
+// Listen for successful installation
+window.addEventListener('appinstalled', () => {
+    console.log('🎉 PWA was successfully installed!');
     deferredPrompt = null;
 });
 
 // Check for file protocol warning
 if (window.location.protocol === 'file:') {
-    console.warn("JustBreathe: PWA features (Install) require a local server (http://localhost), not file://.");
+    console.warn("⚠️ JustBreathe: PWA features require HTTPS or localhost, not file://.");
+} else {
+    console.log('ℹ️ JustBreathe: PWA ready. Waiting for install prompt...');
 }
 
 // 6. Global Sleep Mode Fallback

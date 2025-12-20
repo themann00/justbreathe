@@ -1,15 +1,19 @@
 {
   "name": "Just Breathe",
   "short_name": "Breathe",
-  "start_url": "index.html",
+  "description": "Guided breathing exercises for relaxation and focus",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "orientation": "portrait",
+  "background_color": "#f0f4f8",
+  "theme_color": "#77dd77",
   "icons": [
     {
       "src": "icon.svg",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml"
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }
