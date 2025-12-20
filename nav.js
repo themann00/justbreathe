@@ -4,11 +4,25 @@ const navHtml = `
     <div class="nav-left">
         <span class="nav-logo">JustBreathe</span>
     </div>
+    
+    <!-- Desktop Links (Hidden on Mobile) -->
+    <div class="nav-center desktop-only">
+        <a href="index.html">Breathe</a>
+        <a href="tide.html">Tide</a>
+        <a href="particlecloud.html">Particles</a>
+        <a href="mantra.html">Mantra</a>
+        <a href="mandala.html">Mandala</a>
+        <a href="emdr.html">EMDR</a>
+        <a href="sleep.html">Sleep</a>
+    </div>
+
     <div class="nav-right">
         <!-- Install Button (Hidden by default) -->
         <button id="pwa-install-btn" class="nav-icon-btn" style="display: none;" title="Install App">
             ⬇️
         </button>
+        <!-- Theme Toggle (Visible in Nav now) -->
+        <button id="nav-theme-btn" class="nav-icon-btn" onclick="if(window.toggleTheme) window.toggleTheme()" title="Toggle Theme">◑</button>
         <!-- Hamburger Menu -->
         <button id="menu-btn" class="nav-icon-btn" onclick="toggleMenu()">
             ☰
@@ -59,6 +73,12 @@ const navCss = `
         letter-spacing: 1px;
     }
 
+    .nav-center {
+        display: none; /* Hidden on mobile */
+        gap: 20px;
+        align-items: center;
+    }
+
     .nav-right {
         display: flex;
         gap: 15px;
@@ -76,6 +96,15 @@ const navCss = `
         align-items: center;
         justify-content: center;
     }
+
+    .nav-center a {
+        text-decoration: none;
+        color: var(--text-main, #333);
+        font-weight: 500;
+        font-size: 0.95rem;
+        transition: opacity 0.2s;
+    }
+    .nav-center a:hover { opacity: 0.7; }
 
     /* Install Button Styling */
     #pwa-install-btn {
@@ -110,6 +139,14 @@ const navCss = `
     .drawer-content { display: flex; flex-direction: column; gap: 15px; }
     .drawer-content a { text-decoration: none; color: var(--text-main, #333); font-size: 1.1rem; padding: 5px 0; font-weight: 500; }
     .drawer-item { background: none; border: 1px solid var(--text-muted); padding: 10px; border-radius: 8px; color: var(--text-main); cursor: pointer; width: 100%; text-align: left; }
+
+    /* Desktop Media Query */
+    @media (min-width: 900px) {
+        .nav-center { display: flex; }
+        #menu-btn { display: none; }
+        .drawer { display: none; }
+        /* Hide the drawer theme toggle if we wanted, but drawer is hidden anyway */
+    }
 `;
 
 // 3. Inject HTML & CSS
@@ -120,6 +157,10 @@ document.head.appendChild(styleSheet);
 const navContainer = document.createElement("div");
 navContainer.innerHTML = navHtml;
 document.body.prepend(navContainer);
+
+// Fix Body Spacing so Nav doesn't cover content
+document.body.style.paddingTop = "60px";
+document.body.style.boxSizing = "border-box";
 
 // 4. Menu Logic
 const drawer = document.getElementById('nav-drawer');

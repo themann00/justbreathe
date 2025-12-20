@@ -160,7 +160,13 @@
             height: 100%;
             width: 0%;
             background-color: var(--text-muted);
-            transition: width 0.1s linear, background-color 0.3s;
+            opacity: 0;
+            /* Default: Fade out opacity, delay width reset so it doesn't retract visibly */
+            transition: opacity 0.3s ease, width 0s 0.3s, background-color 0.3s;
+        }
+        .progress-bar-fill.holding {
+            opacity: 1;
+            transition: width 0.1s linear, opacity 0.1s ease, background-color 0.3s;
         }
 
         .controls {
@@ -438,10 +444,12 @@
         
         // Update Progress Bar
         if (activePhase.type === 'hold') {
+            progressBar.classList.add('holding');
             progressBar.style.width = (phaseProgress * 100) + "%";
             progressBar.style.backgroundColor = cachedStyles.hold;
         } else {
-            progressBar.style.width = "0%";
+            progressBar.classList.remove('holding');
+            progressBar.style.width = "0%"; // Will snap after 0.3s delay due to CSS
         }
 
         let opacity = 0;
