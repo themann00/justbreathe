@@ -29,8 +29,6 @@ const navHtml = `
         <button id="sleep-btn" class="nav-icon-btn" onclick="toggleSleepMode()" title="Sleep Mode">
             Zz
         </button>
-        <!-- Theme Toggle (Visible in Nav now) -->
-        <button id="nav-theme-btn" class="nav-icon-btn" onclick="if(window.toggleTheme) window.toggleTheme()" title="Toggle Theme">◑</button>
         <!-- Hamburger Menu -->
         <button id="menu-btn" class="nav-icon-btn" onclick="toggleMenu()">
             ☰
@@ -247,9 +245,13 @@ manifestLink.href = 'manifest.json';
 document.head.appendChild(manifestLink);
 
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
+    const registerSW = () => {
         navigator.serviceWorker.register('sw.js')
             .then(reg => console.log('Service Worker Registered'))
             .catch(err => console.log('Service Worker Failed', err));
-    });
+    };
+
+    // Register immediately if page is already loaded, otherwise wait for load
+    if (document.readyState === 'complete') registerSW();
+    else window.addEventListener('load', registerSW);
 }
