@@ -206,6 +206,7 @@ let deferredPrompt;
 const installBtn = document.getElementById('pwa-install-btn');
 
 window.addEventListener('beforeinstallprompt', (e) => {
+    console.log('JustBreathe: PWA Install Event Fired!');
     e.preventDefault(); // Prevent Chrome 67+ from automatically showing the prompt
     deferredPrompt = e; // Stash the event
     installBtn.style.display = 'flex'; // Show our custom button
@@ -219,6 +220,11 @@ installBtn.addEventListener('click', async () => {
     console.log(`User response to the install prompt: ${outcome}`);
     deferredPrompt = null;
 });
+
+// Check for file protocol warning
+if (window.location.protocol === 'file:') {
+    console.warn("JustBreathe: PWA features (Install) require a local server (http://localhost), not file://.");
+}
 
 // 6. Global Sleep Mode Fallback
 // (Allows pages like tide.html to override this with specific logic, 

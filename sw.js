@@ -1,4 +1,4 @@
-const CACHE_NAME = 'justbreathe-v1';
+const CACHE_NAME = 'justbreathe-v2';
 const ASSETS = [
     './',
     'index.html',
@@ -9,10 +9,12 @@ const ASSETS = [
     'emdr.html',
     'sleep.html',
     'nav.js',
-    'manifest.json'
+    'manifest.json',
+    'icon.svg'
 ];
 
 self.addEventListener('install', (e) => {
+    self.skipWaiting(); // Force update immediately
     e.waitUntil(
         caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
     );
@@ -22,4 +24,8 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(
         caches.match(e.request).then((response) => response || fetch(e.request))
     );
+});
+
+self.addEventListener('activate', (e) => {
+    e.waitUntil(clients.claim()); // Take control of all pages immediately
 });
