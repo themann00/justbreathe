@@ -322,6 +322,7 @@
     let startTime = performance.now();
     let currentPhaseColor = '#ddd';
     let currentWaterLevel = 0.5; // For audio mapping
+    let cachedStyles = {};
 
     // --- AUDIO ENGINE ---
     let audioCtx = null;
@@ -416,6 +417,7 @@
         const currentTheme = body.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         body.setAttribute('data-theme', newTheme);
+        updateStyles();
     }
 
     function toggleSleepMode() {
@@ -426,6 +428,7 @@
         if (isSleep) {
             document.body.setAttribute('data-theme', 'dark');
         }
+        updateStyles();
     }
 
     function toggleTextVis() {
@@ -466,9 +469,9 @@
 
     updateTimings();
 
-    function getStyles() {
+    function updateStyles() {
         const s = getComputedStyle(document.body);
-        return {
+        cachedStyles = {
             front: s.getPropertyValue('--wave-front').trim(),
             back: s.getPropertyValue('--wave-back').trim(),
             inhale: s.getPropertyValue('--color-inhale').trim(),
@@ -478,10 +481,10 @@
             defaultBorder: s.getPropertyValue('--porthole-border').trim()
         };
     }
+    updateStyles();
 
     function draw(currentTime) {
         ctx.clearRect(0, 0, width, height);
-        const styles = getStyles();
 
         // 1. Determine Current Phase
         const elapsed = (currentTime - startTime) % totalCycleTime;
@@ -502,11 +505,11 @@
         if (textVisible) statusDiv.innerText = activePhase.label;
         
         switch(activePhase.type) {
-            case 'inhale': currentPhaseColor = styles.inhale; break;
-            case 'hold': currentPhaseColor = styles.hold; break;
-            case 'exhale': currentPhaseColor = styles.exhale; break;
-            case 'rest': currentPhaseColor = styles.rest; break;
-            default: currentPhaseColor = styles.defaultBorder;
+            case 'inhale': currentPhaseColor = cachedStyles.inhale; break;
+            case 'hold': currentPhaseColor = cachedStyles.hold; break;
+            case 'exhale': currentPhaseColor = cachedStyles.exhale; break;
+            case 'rest': currentPhaseColor = cachedStyles.rest; break;
+            default: currentPhaseColor = cachedStyles.defaultBorder;
         }
 
         // 2. Calculate Water Level & Audio Vol
@@ -559,8 +562,8 @@
             ctx.fill();
         }
 
-        drawWave(0, 10, 0.01, 2, styles.back);
-        drawWave(2, 15, 0.015, 3, styles.front);
+        drawWave(0, 10, 0.01, 2, cachedStyles.back);
+        drawWave(2, 15, 0.015, 3, cachedStyles.front);
 
         ctx.restore();
 

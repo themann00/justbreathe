@@ -312,12 +312,14 @@
     let phases = [];
     let totalCycleTime = 0;
     let startTime = performance.now();
+    let cachedStyles = {};
 
     function toggleTheme() {
         const body = document.body;
         const currentTheme = body.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         body.setAttribute('data-theme', newTheme);
+        updateStyles();
     }
 
     function toggleTextVis() {
@@ -379,9 +381,9 @@
         return size;
     }
 
-    function getStyles() {
+    function updateStyles() {
         const s = getComputedStyle(document.body);
-        return {
+        cachedStyles = {
             inhale: s.getPropertyValue('--color-inhale').trim(),
             hold: s.getPropertyValue('--color-hold').trim(),
             exhale: s.getPropertyValue('--color-exhale').trim(),
@@ -389,10 +391,10 @@
             default: s.getPropertyValue('--text-main').trim()
         };
     }
+    updateStyles();
 
     function draw(currentTime) {
         ctx.clearRect(0, 0, width, height);
-        const styles = getStyles();
 
         // 1. Determine Phase
         const elapsed = (currentTime - startTime) % totalCycleTime;
@@ -414,27 +416,27 @@
 
         // 2. Calculate Opacity based on Phase
         let opacity = 0;
-        let currentColor = styles.default;
+        let currentColor = cachedStyles.default;
 
         if (activePhase.type === 'inhale') {
             // Fade In (0 -> 1)
             opacity = (Math.sin((phaseProgress * Math.PI) - (Math.PI/2)) + 1) / 2;
-            currentColor = styles.inhale;
+            currentColor = cachedStyles.inhale;
         } 
         else if (activePhase.type === 'hold') {
             // Stay Visible
             opacity = 1; 
-            currentColor = styles.hold;
+            currentColor = cachedStyles.hold;
         } 
         else if (activePhase.type === 'exhale') {
             // Fade Out (1 -> 0)
             opacity = 1 - ((Math.sin((phaseProgress * Math.PI) - (Math.PI/2)) + 1) / 2);
-            currentColor = styles.exhale;
+            currentColor = cachedStyles.exhale;
         } 
         else if (activePhase.type === 'rest') {
             // Stay Invisible
             opacity = 0; 
-            currentColor = styles.rest;
+            currentColor = cachedStyles.rest;
         }
 
         // --- VISUALS ---

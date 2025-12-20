@@ -200,11 +200,9 @@
             this.y += this.vy;
         }
 
-        draw(r, g, b) {
-            ctx.beginPath();
+        definePath(ctx) {
+            ctx.moveTo(this.x + this.size, this.y);
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-            ctx.fill();
         }
     }
 
@@ -276,10 +274,13 @@
         const g = Math.round(currentColor[1]);
         const b = Math.round(currentColor[2]);
 
+        ctx.beginPath();
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
         particles.forEach(p => {
             p.update();
-            p.draw(r, g, b);
+            p.definePath(ctx);
         });
+        ctx.fill();
 
         if(isHolding) {
              statusDiv.style.color = `rgb(${r}, ${g}, ${b})`;
